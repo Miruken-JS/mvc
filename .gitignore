@@ -1,0 +1,12 @@
+bin/
+gen/
+debug/
+*~
+node_modules
+jspm_packages
+bower_components
+build/reports
+documentation/docs/
+bundles/
+.idea
+.DS_Store
