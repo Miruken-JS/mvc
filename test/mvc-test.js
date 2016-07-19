@@ -1,6 +1,7 @@
 import { Model } from '../src/model';
 import { Controller } from '../src/controller';
 import { Context } from 'miruken-context';
+import { ModalPolicy } from '../src/modal';
 
 import {
     ValidationCallbackHandler, ValidateJsCallbackHandler,
@@ -615,21 +616,19 @@ describe("Controller", () => {
         });        
     });
 
-    /*
     describe("CallbackHandler", () => {
         describe("#modal", () => {
             it("should define modal policy", () => {
                 var modal = context.modal();
-                expect(modal.handle(new ModalPolicy)).to.be.true;
+                expect(modal.handle(new ModalPolicy())).to.be.true;
             });
 
             it("should specify modal title", () => {
                 var modal   = context.modal({title: 'Hello'}),
-                    options = new ModalPolicy;
+                    options = new ModalPolicy();
                 expect(modal.handle(options)).to.be.true;
                 expect(options.title).to.equal('Hello');
             });
         });
     });
-    */
 });

@@ -96,7 +96,9 @@ CallbackHandler.implement({
      */
     presenting(policy) {
         return policy ? this.decorate({
-            $handle: [ PresentationPolicy, presenting => policy.mergeInto(presenting) ]
+            $handle: [
+                PresentationPolicy, presenting => policy.mergeInto(presenting)
+            ]
         }) : this;
     }
 });

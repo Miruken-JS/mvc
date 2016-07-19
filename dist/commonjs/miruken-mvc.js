@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.ButtonClicked = exports.PresentationPolicy = exports.ViewRegionAware = exports.ViewRegion = exports.MasterDetailAware = exports.MasterDetail = exports.Controller = exports.Model = undefined;
+exports.ModalProviding = exports.ModalPolicy = exports.ButtonClicked = exports.PresentationPolicy = exports.ViewRegionAware = exports.ViewRegion = exports.MasterDetailAware = exports.MasterDetail = exports.Controller = exports.Model = undefined;
 
 var _mirukenCore = require('miruken-core');
 
@@ -241,5 +241,27 @@ _mirukenCallback.CallbackHandler.implement({
                 return policy.mergeInto(presenting);
             }]
         }) : this;
+    }
+});
+
+var ModalPolicy = exports.ModalPolicy = PresentationPolicy.extend({
+    $properties: {
+        title: '',
+        style: null,
+        chrome: true,
+        header: false,
+        footer: false,
+        forceClose: false,
+        buttons: null
+    }
+});
+
+var ModalProviding = exports.ModalProviding = _mirukenCore.StrictProtocol.extend({
+    showModal: function showModal(container, content, policy, context) {}
+});
+
+_mirukenCallback.CallbackHandler.implement({
+    modal: function modal(options) {
+        return this.presenting(new ModalPolicy(options));
     }
 });

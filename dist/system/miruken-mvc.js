@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruken-context'], function (_export, _context) {
     "use strict";
 
-    var Base, Metadata, $isNothing, $isFunction, $isObject, $inferProperties, Protocol, StrictProtocol, $validateThat, Validator, Validating, CallbackHandler, $contextual, Model, Controller, MasterDetail, MasterDetailAware, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked;
+    var Base, Metadata, $isNothing, $isFunction, $isObject, $inferProperties, Protocol, StrictProtocol, $validateThat, Validator, Validating, CallbackHandler, $contextual, Model, Controller, MasterDetail, MasterDetailAware, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked, ModalPolicy, ModalProviding;
 
 
     function _validateController(controller, target, method, scope) {
@@ -270,6 +270,32 @@ System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruke
                             return policy.mergeInto(presenting);
                         }]
                     }) : this;
+                }
+            });
+
+            _export('ModalPolicy', ModalPolicy = PresentationPolicy.extend({
+                $properties: {
+                    title: '',
+                    style: null,
+                    chrome: true,
+                    header: false,
+                    footer: false,
+                    forceClose: false,
+                    buttons: null
+                }
+            }));
+
+            _export('ModalPolicy', ModalPolicy);
+
+            _export('ModalProviding', ModalProviding = StrictProtocol.extend({
+                showModal: function showModal(container, content, policy, context) {}
+            }));
+
+            _export('ModalProviding', ModalProviding);
+
+            CallbackHandler.implement({
+                modal: function modal(options) {
+                    return this.presenting(new ModalPolicy(options));
                 }
             });
         }
