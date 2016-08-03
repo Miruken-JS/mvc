@@ -3,7 +3,7 @@
 System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruken-context'], function (_export, _context) {
     "use strict";
 
-    var Base, Metadata, $isNothing, $isFunction, $isObject, $inferProperties, Protocol, StrictProtocol, $validateThat, Validator, Validating, CallbackHandler, $contextual, Model, Controller, MasterDetail, MasterDetailAware, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked, ModalPolicy, ModalProviding;
+    var Base, $meta, $isNothing, $isFunction, $isObject, $inferProperties, Protocol, StrictProtocol, $validateThat, Validator, Validating, CallbackHandler, $contextual, Model, Controller, MasterDetail, MasterDetailAware, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked, ModalPolicy, ModalProviding;
 
 
     function _validateController(controller, target, method, scope) {
@@ -18,7 +18,7 @@ System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruke
     return {
         setters: [function (_mirukenCore) {
             Base = _mirukenCore.Base;
-            Metadata = _mirukenCore.Metadata;
+            $meta = _mirukenCore.$meta;
             $isNothing = _mirukenCore.$isNothing;
             $isFunction = _mirukenCore.$isFunction;
             $isObject = _mirukenCore.$isObject;
@@ -43,7 +43,7 @@ System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruke
                     if ($isNothing(data)) {
                         return this;
                     }
-                    var meta = this[Metadata],
+                    var meta = $meta(this),
                         descriptors = meta && meta.getDescriptor(),
                         dynamic = options && options.dynamic;
                     if (descriptors) {
@@ -89,7 +89,7 @@ System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruke
                     var _this = this;
 
                     data = data || {};
-                    var meta = this[Metadata],
+                    var meta = $meta(this),
                         descriptors = meta && meta.getDescriptor();
                     if (descriptors) {
                         var all = !$isObject(spec);
@@ -152,7 +152,7 @@ System.register(['miruken-core', 'miruken-validate', 'miruken-callback', 'miruke
                     if (!(model instanceof this.constructor)) {
                         return false;
                     }
-                    var meta = this[Metadata],
+                    var meta = $meta(this),
                         descriptors = meta && meta.getDescriptor();
                     for (var key in descriptors) {
                         var keyValue = this[key];

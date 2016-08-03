@@ -1,4 +1,4 @@
-import {Base,Metadata,$isNothing,$isFunction,$isObject,$inferProperties,Protocol,StrictProtocol} from 'miruken-core';
+import {Base,$meta,$isNothing,$isFunction,$isObject,$inferProperties,Protocol,StrictProtocol} from 'miruken-core';
 import {$validateThat,Validator,Validating} from 'miruken-validate';
 import {CallbackHandler} from 'miruken-callback';
 import {$contextual} from 'miruken-context';
@@ -42,7 +42,7 @@ export const Model = Base.extend(
             if ($isNothing(data)) {
                 return this;
             }
-            const meta        = this[Metadata],
+            const meta        = $meta(this),
                   descriptors = meta && meta.getDescriptor(),
                   dynamic     = options && options.dynamic;
             if (descriptors) {
@@ -93,7 +93,7 @@ export const Model = Base.extend(
          */                        
         toData(spec, data) {
             data = data || {};
-            const meta        = this[Metadata],
+            const meta        = $meta(this),
                   descriptors = meta && meta.getDescriptor();
             if (descriptors) {
                 const all = !$isObject(spec);
@@ -154,7 +154,7 @@ export const Model = Base.extend(
             if (!(model instanceof this.constructor)) {
                 return false;
             }
-            const meta        = this[Metadata],
+            const meta        = $meta(this),
                   descriptors = meta && meta.getDescriptor();
             for (let key in descriptors) {
                 const keyValue = this[key];
@@ -489,7 +489,7 @@ CallbackHandler.implement({
      * @returns {miruken.callback.CallbackHandler} modal handler.
      * @for miruken.callback.CallbackHandler
      */                                                                
-    modal: function (options) {
+    modal(options) {
         return this.presenting(new ModalPolicy(options));
     }
 });

@@ -21,7 +21,7 @@ var Model = exports.Model = _mirukenCore.Base.extend(_mirukenCore.$inferProperti
         if ((0, _mirukenCore.$isNothing)(data)) {
             return this;
         }
-        var meta = this[_mirukenCore.Metadata],
+        var meta = (0, _mirukenCore.$meta)(this),
             descriptors = meta && meta.getDescriptor(),
             dynamic = options && options.dynamic;
         if (descriptors) {
@@ -67,7 +67,7 @@ var Model = exports.Model = _mirukenCore.Base.extend(_mirukenCore.$inferProperti
         var _this = this;
 
         data = data || {};
-        var meta = this[_mirukenCore.Metadata],
+        var meta = (0, _mirukenCore.$meta)(this),
             descriptors = meta && meta.getDescriptor();
         if (descriptors) {
             var all = !(0, _mirukenCore.$isObject)(spec);
@@ -130,7 +130,7 @@ var Model = exports.Model = _mirukenCore.Base.extend(_mirukenCore.$inferProperti
         if (!(model instanceof this.constructor)) {
             return false;
         }
-        var meta = this[_mirukenCore.Metadata],
+        var meta = (0, _mirukenCore.$meta)(this),
             descriptors = meta && meta.getDescriptor();
         for (var key in descriptors) {
             var keyValue = this[key];

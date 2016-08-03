@@ -13,7 +13,7 @@ define(['exports', 'miruken-core', 'miruken-validate', 'miruken-callback', 'miru
             if ((0, _mirukenCore.$isNothing)(data)) {
                 return this;
             }
-            var meta = this[_mirukenCore.Metadata],
+            var meta = (0, _mirukenCore.$meta)(this),
                 descriptors = meta && meta.getDescriptor(),
                 dynamic = options && options.dynamic;
             if (descriptors) {
@@ -59,7 +59,7 @@ define(['exports', 'miruken-core', 'miruken-validate', 'miruken-callback', 'miru
             var _this = this;
 
             data = data || {};
-            var meta = this[_mirukenCore.Metadata],
+            var meta = (0, _mirukenCore.$meta)(this),
                 descriptors = meta && meta.getDescriptor();
             if (descriptors) {
                 var all = !(0, _mirukenCore.$isObject)(spec);
@@ -122,7 +122,7 @@ define(['exports', 'miruken-core', 'miruken-validate', 'miruken-callback', 'miru
             if (!(model instanceof this.constructor)) {
                 return false;
             }
-            var meta = this[_mirukenCore.Metadata],
+            var meta = (0, _mirukenCore.$meta)(this),
                 descriptors = meta && meta.getDescriptor();
             for (var key in descriptors) {
                 var keyValue = this[key];
