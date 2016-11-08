@@ -1,19 +1,19 @@
 var path = require('path');
 var paths = require('./paths');
 
-exports.base = function() {   
+exports.base = function() {
     return {
         filename: '',
         filenameRelative: '',
         sourceMap: true,
-        sourceMapTarget: '',
         sourceRoot: '',
         moduleRoot: path.resolve('src').replace(/\\/g, '/'),
+        moduleIds: false,
         comments: false,
         compact: false,
-        code:true,
-        presets: ['es2015'],
-        plugins: []
+        code: true,
+        presets: [ 'es2015' ],
+        plugins: ['transform-decorators-legacy']
     };
 };
 

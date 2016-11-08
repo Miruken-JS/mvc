@@ -1,9 +1,8 @@
 import {
-    Base, Protocol, StrictProtocol
-} from 'miruken-core';
+    Base, Protocol, StrictProtocol, Policy
+} from "miruken-core";
 
-import { CallbackHandler } from 'miruken-callback';
-import { Model } from './model';
+import { Handler, handles } from "miruken-callback";
 
 /**
  * Protocol for rendering a view on the screen.
@@ -17,8 +16,8 @@ export const ViewRegion = StrictProtocol.extend({
      */
     get name() {},
     /**
-     * Gets the regions context.
-     * @property {miruken.context.Context} context
+     * Gets the regions 
+     * @property {Context} context
      */
     get context() {},        
     /**
@@ -28,12 +27,12 @@ export const ViewRegion = StrictProtocol.extend({
     get container() {},        
     /**
      * Gets the regions controller.
-     * @property {miruken.mvc.Controller} controller
+     * @property {Controller} controller
      */            
     get controller() {},
     /**
-     * Gets the regions controller context.
-     * @property {miruken.context.Context} controllerContext
+     * Gets the regions controller 
+     * @property {Context} controllerContext
      */            
     get controllerContext() {},        
     /**
@@ -47,7 +46,7 @@ export const ViewRegion = StrictProtocol.extend({
 
 /**
  * Protocol for communicating
- * {{#crossLink "miruken.callback.CallbackHandler"}}{{/crossLink}} lifecycle.
+ * {{#crossLink "Handler"}}{{/crossLink}} lifecycle.
  * @class ViewRegionAware
  * @extends Protocol
  */
@@ -58,9 +57,9 @@ export const ViewRegionAware = Protocol.extend({
 /**
  * Base class for presentation policies.
  * @class PresentationPolicy
- * @extends miruken.mvc.Model
+ * @extends Policy
  */
-export const PresentationPolicy = Model.extend();
+export const PresentationPolicy = Policy.extend();
 
 /**
  * Represents the clicking of a button.
@@ -87,18 +86,19 @@ export const ButtonClicked = Base.extend({
     }
 });
 
-CallbackHandler.implement({
+Handler.implement({
     /**
      * Applies the presentation policy to the handler.
      * @method presenting
-     * @returns {miruken.callback.CallbackHandler} presenting handler.
-     * @for miruken.callback.CallbackHandler
+     * @returns {Handler} presenting handler.
+     * @for Handler
      */
     presenting(policy) {
         return policy ? this.decorate({
-            $handle: [
-                PresentationPolicy, presenting => policy.mergeInto(presenting)
-            ]
+            @handles
+            mergePolicy(presenting) {
+                policy.mergeInto(presenting)                
+            }
         }) : this;
     }
 });

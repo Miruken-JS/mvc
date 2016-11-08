@@ -1,227 +1,111 @@
-import {Base,$meta,$isNothing,$isFunction,$isObject,$inferProperties,Protocol,StrictProtocol} from 'miruken-core';
-import {$validateThat,Validator,Validating} from 'miruken-validate';
-import {CallbackHandler} from 'miruken-callback';
-import {$contextual} from 'miruken-context';
+import {Base,Protocol,StrictProtocol,Policy,Metadata,$isFunction,$isPlainObject,isDescriptor,Variance,$isNothing,$classOf,decorate,$flatten,$equals,design,typeOf,instanceOf,$isSymbol,getPropertyDescriptors,emptyArray} from 'miruken-core';
+import {Handler,handles,$define,$handle,$composer,addDefinition} from 'miruken-callback';
+import {Validator,Validating} from 'miruken-validate';
+import {contextual} from 'miruken-context';
 
 /**
- * Base class for modelling concepts using one or more 
- * {{#crossLink "miruken.$properties"}}{{/crossLink}}
- * <pre>
- *    const Child = Model.extend({
- *       $properties: {
- *           firstName: { validate: { presence: true } },
- *           lastNane:  { validate: { presence: true } },
- *           sibling:   { map: Child },
- *           age:       { validate {
- *                            numericality: {
- *                                onlyInteger:       true,
- *                                lessThanOrEqualTo: 12
- *                            }
- *                      }}
- *       }
- *    })
- * </pre>
- * @class Model
+ * Protocol for rendering a view on the screen.
+ * @class ViewRegion
+ * @extends StrictProtocol
+ */
+export const ViewRegion = StrictProtocol.extend({
+    /**
+     * Gets the regions name.
+     * @property {string} name
+     */
+    get name() {},
+    /**
+     * Gets the regions 
+     * @property {Context} context
+     */
+    get context() {},        
+    /**
+     * Gets the regions container element.
+     * @property {DOMElement} container
+     */
+    get container() {},        
+    /**
+     * Gets the regions controller.
+     * @property {Controller} controller
+     */            
+    get controller() {},
+    /**
+     * Gets the regions controller 
+     * @property {Context} controllerContext
+     */            
+    get controllerContext() {},        
+    /**
+     * Renders new presentation in the region.
+     * @method present
+     * @param    {Any}      presentation  -  presentation options
+     * @returns  {Promise}  promise for the rendering.
+     */                                        
+    present(presentation) {}
+});
+
+/**
+ * Protocol for communicating
+ * {{#crossLink "Handler"}}{{/crossLink}} lifecycle.
+ * @class ViewRegionAware
+ * @extends Protocol
+ */
+export const ViewRegionAware = Protocol.extend({
+    viewRegionCreated(viewRegion) {}
+});
+
+/**
+ * Base class for presentation policies.
+ * @class PresentationPolicy
+ * @extends Policy
+ */
+export const PresentationPolicy = Policy.extend();
+
+/**
+ * Represents the clicking of a button.
+ * @class ButtonClicked
  * @constructor
- * @param  {Object}  [data]   -  json structured data
- * @param  {Object}  options  -  mapping options
+ * @param  {Any}     button       -  clicked button
+ * @param  {number}  buttonIndex  -  index of clicked button 
  * @extends Base
  */
-export const Model = Base.extend(
-    $inferProperties, $validateThat, {
-        constructor(data, options) {
-            this.fromData(data, options);
-        },
-        /**
-         * Maps json structured data into the model.
-         * @method fromData
-         * @param   {Object}  data     -  json structured data
-         * @param   {Object}  options  -  mapping options
-         */
-        fromData(data, options) {
-            if ($isNothing(data)) {
-                return this;
-            }
-            const meta        = $meta(this),
-                  descriptors = meta && meta.getDescriptor(),
-                  dynamic     = options && options.dynamic;
-            if (descriptors) {
-                for (let key in descriptors) {
-                    const descriptor = descriptors[key];
-                    if (descriptor && descriptor.root && descriptor.map) {
-                        this[key] = descriptor.map(data); 
-                    }
-                }
-            }
-            for (let key in data) {
-                let descriptor = descriptors && descriptors[key],
-                    mapper     = descriptor  && descriptor.map;
-                if ((mapper && descriptor.root) || (descriptor && descriptor.ignore)) {
-                    continue;  // ignore or already rooted
-                }
-                const value = data[key];
-                if (value === undefined) {
-                    continue;
-                }
-                if (key in this) {
-                    this[key] = Model.map(value, mapper, options);
-                } else {
-                    const lkey  = key.toLowerCase();
-                    let   found = false;
-                    for (let k in this) {
-                        if (k.toLowerCase() === lkey) {
-                            descriptor = descriptors && descriptors[k];
-                            mapper     = descriptor  && descriptor.map;                            
-                            this[k]    = Model.map(value, mapper, options);
-                            found      = true;
-                            break;
-                        }
-                    }
-                    if (!found && dynamic) {
-                        this[key] = value;
-                    }
-                }
-            }
-            return this;
-        },
-        /**
-         * Maps the model into json structured data.
-         * @method toData
-         * @param   {Object}  spec    -  filters data to map
-         * @param   {Object}  [data]  -  receives mapped data
-         * @returns {Object} json structured data.
-         */                        
-        toData(spec, data) {
-            data = data || {};
-            const meta        = $meta(this),
-                  descriptors = meta && meta.getDescriptor();
-            if (descriptors) {
-                const all = !$isObject(spec);
-                for (let key in descriptors) {
-                    if (all || (key in spec)) {
-                        let keyValue   = this[key];
-                        if (keyValue === undefined) {
-                            continue;
-                        }
-                        const descriptor = descriptors[key],
-                              keySpec    = all ? spec : spec[key];
-                        if (!(all || keySpec) || descriptor.ignore) {
-                            continue;
-                        }
-                        if (descriptor.root) {
-                            if (keyValue) {
-                                if ($isFunction(keyValue.toData)) {
-                                    keyValue.toData(keySpec, data);
-                                } else if ($isFunction(keyValue.toJSON)) {
-                                    const json = keyValue.toJSON();
-                                    for(let k in json) data[k] = json[k];
-                                }
-                            }
-                        } else if (Array.isArray(keyValue)) {
-                            data[key] = keyValue.map(elem => {
-                                if (elem) {
-                                    if ($isFunction(elem.toData)) {
-                                        return elem.toData(keySpec);
-                                    } else if ($isFunction(elem.toJSON)) {
-                                        return elem.toJSON();
-                                    }
-                                    return elem;
-                                }
-                            });
-                        } else {
-                            if (keyValue) {
-                                if ($isFunction(keyValue.toData)) {
-                                    keyValue = keyValue.toData(keySpec);
-                                } else if ($isFunction(keyValue.toJSON)) {
-                                    keyValue = keyValue.toJSON();
-                                }
-                            }
-                            data[key] = keyValue
-                        }
-                    }
-                }
-            }            
-            return data;
-        },
-        toJSON() { return this.toData(); },
-        /**
-         * Merges specified data into another model.
-         * @method mergeInto
-         * @param   {miruken.mvc.Model}  model  -  model to receive data
-         * @returns {boolean} true if model could be merged into. 
-         */            
-        mergeInto(model) {
-            if (!(model instanceof this.constructor)) {
-                return false;
-            }
-            const meta        = $meta(this),
-                  descriptors = meta && meta.getDescriptor();
-            for (let key in descriptors) {
-                const keyValue = this[key];
-                if (keyValue !== undefined && this.hasOwnProperty(key)) {
-                    const modelValue = model[key];
-                    if (modelValue === undefined || !model.hasOwnProperty(key)) {
-                        model[key] = keyValue;
-                    } else if ($isFunction(keyValue.mergeInto)) {
-                        keyValue.mergeInto(modelValue);
-                    }
-                }
-            }
-            return true;
-        }
-    }, {
-        /**
-         * Maps the model value into json using a mapper function.
-         * @method map
-         * @static
-         * @param   {Any}      value      -  model value
-         * @param   {Fnction}  mapper     -  mapping function or class
-         * @param   {Object}   [options]  -  mapping options
-         * @returns {Object} json structured data.
-         */                                
-        map(value, mapper, options) {
-            return Array.isArray(value)
-                 ? value.map(elem => Model.map(elem, mapper, options))
-                 : mapper ? mapper(value, options) : value;
-        },
-        coerce(...args) {
-            return Reflect.construct(this, args);
-        }
+export const ButtonClicked = Base.extend({
+    constructor(button, buttonIndex) {
+        this.extend({
+            /**
+             * Gets the clicked button.
+             * @property {Any} button
+             */                                
+            get button() { return button; },
+            /**
+             * Gets the clicked button index.
+             * @property {number} button index
+             */                                
+            get buttonIndex() { return buttonIndex; }
+        });
     }
-);
+});
 
-/**
- * Base class for controllers.
- * @class Controller
- * @constructor
- * @extends miruken.callback.CallbackHandler
- * @uses miruken.context.$contextual
- * @uses miruken.validate.$validateThat
- * @uses miruken.validate.Validating
- */
-export const Controller = CallbackHandler.extend(
-    $contextual, $validateThat, Validating, {
-        validate(target, scope) {
-            return _validateController(this, target, 'validate', scope);
-        },
-        validateAsync(target, scope) {
-            return _validateController(this, target, 'validateAsync', scope);
-        }
-    });
-
-function _validateController(controller, target, method, scope) {
-    const context = controller.context;
-    if (!context) {
-        throw new Error("Validation requires a context to be available.");
+Handler.implement({
+    /**
+     * Applies the presentation policy to the handler.
+     * @method presenting
+     * @returns {Handler} presenting handler.
+     * @for Handler
+     */
+    presenting(policy) {
+        return policy ? this.decorate({
+            @handles
+            mergePolicy(presenting) {
+                policy.mergeInto(presenting)                
+            }
+        }) : this;
     }
-    const validator = Validator(context);
-    return validator[method].call(validator, target || controller, scope);
-}
+});
 
 /**
  * Protocol for managing master-detail relationships.
  * @class MasterDetail
- * @extends miruken.Protocol     
+ * @extends Protocol     
  */    
 export const MasterDetail = Protocol.extend({
     /**
@@ -302,7 +186,7 @@ export const MasterDetail = Protocol.extend({
 /**
  * Protocol for receiving master-detail notifications.
  * @class MasterDetailAware
- * @extends miruken.Protocol     
+ * @extends Protocol     
  */    
 export const MasterDetailAware = Protocol.extend({
     /**
@@ -348,119 +232,258 @@ export const MasterDetailAware = Protocol.extend({
     detailRemoved(detail, master) {}
 });
 
-/**
- * Protocol for rendering a view on the screen.
- * @class ViewRegion
- * @extends StrictProtocol
- */
-export const ViewRegion = StrictProtocol.extend({
-    /**
-     * Gets the regions name.
-     * @property {string} name
-     */
-    get name() {},
-    /**
-     * Gets the regions context.
-     * @property {miruken.context.Context} context
-     */
-    get context() {},        
-    /**
-     * Gets the regions container element.
-     * @property {DOMElement} container
-     */
-    get container() {},        
-    /**
-     * Gets the regions controller.
-     * @property {miruken.mvc.Controller} controller
-     */            
-    get controller() {},
-    /**
-     * Gets the regions controller context.
-     * @property {miruken.context.Context} controllerContext
-     */            
-    get controllerContext() {},        
-    /**
-     * Renders new presentation in the region.
-     * @method present
-     * @param    {Any}      presentation  -  presentation options
-     * @returns  {Promise}  promise for the rendering.
-     */                                        
-    present(presentation) {}
-});
+const mappingMetadataKey = Symbol();
 
 /**
- * Protocol for communicating
- * {{#crossLink "miruken.callback.CallbackHandler"}}{{/crossLink}} lifecycle.
- * @class ViewRegionAware
+ * Maintains mapping information for a class or property
+ * @method mapping
+ * @param  {Object}  mapping  -  member mapping
+ */  
+export const mapping = Metadata.decorator(mappingMetadataKey,
+    (target, key, descriptor, mapping) => {
+        if (!$isPlainObjet(mapping)) {
+            throw new TypeError("@mapping must be a simple object");
+        }
+        if (!isDescriptor(descriptor)) {
+            mapping = key;
+            key     = null;
+        }
+        Metadata.define(mappingMetadataKey, mapping, target, key);
+    });
+
+/**
+ * Marks the property to be mapped from the root.
+ * @method root
+ */
+export function root(target, key, descriptor) {
+    _getOrCreateMapping(target, key).root = true;    
+}
+
+/**
+ * Marks the property to be ignored by the mapping.
+ * @method ignore
+ */
+export function ignore(target, key, descriptor) {
+    _getOrCreateMapping(target, key).ignore = true;
+}
+
+function _getOrCreateMapping(target, key) {
+    return Metadata.getOrCreateOwn(mappingMetadataKey, target, key, () => ({}));
+}
+
+export default mapping;
+
+/**
+ * Map to definition group.
+ * @property {Function} $mapTo
+ */
+export const $mapTo = $define(Variance.Contravariant);
+
+/**
+ * Map from definition group.
+ * @property {Function} $mapFrom
+ */
+export const $mapFrom = $define(Variance.Covariant);
+
+/**
+ * Protocol for mapping objects.
+ * @class Mapping
  * @extends Protocol
- */
-export const ViewRegionAware = Protocol.extend({
-    viewRegionCreated(viewRegion) {}
+ */        
+export const Mapping = Protocol.extend({
+    /**
+     * Maps the `object` to a value in `format`.
+     * @method mapTo 
+     * @param   {Object}  object   -  object to map
+     * @param   {Any}     format   -  format specifier
+     * @param   {Object}  options  -  mapping options
+     * @returns {Any}  mapped value.
+     */
+    mapTo(object, format, options) {},
+    /**
+     * Maps the formatted `value` in `format` to `classOrInstance`.
+     * @method mapTo 
+     * @param   {Any}  value       -  formatted value
+     * @param   {Any}  format      -  format specifier
+     * @param   {Function|Object}  -  instance or class to unmap
+     * @param   {Object}  options  -  mapping options
+     * @return  {Object}  unmapped instance. 
+     */    
+    mapFrom(value, format, classOrInstance, options) {}
 });
 
 /**
- * Base class for presentation policies.
- * @class PresentationPolicy
- * @extends miruken.mvc.Model
- */
-export const PresentationPolicy = Model.extend();
+ * Protocol for mapping objects strictly.
+ * @class Mapper
+ * @extends StrictProtocol
+ * @uses Mapping
+ */        
+export const Mapper = StrictProtocol.extend(Mapping);
 
 /**
- * Represents the clicking of a button.
- * @class ButtonClicked
+ * Base callback for mapping.
+ * @class MapCallback
  * @constructor
- * @param  {Any}     button       -  clicked button
- * @param  {number}  buttonIndex  -  index of clicked button 
+ * @param   {Any}     format   -  format specifier
+ * @param   {Object}  options  -  mapping options
  * @extends Base
  */
-export const ButtonClicked = Base.extend({
-    constructor(button, buttonIndex) {
+const MapCallback = Base.extend({
+    constructor(format, options) {
         this.extend({
             /**
-             * Gets the clicked button.
-             * @property {Any} button
-             */                                
-            get button() { return button; },
+             * Gets the format to map.
+             * @property {Any} format
+             * @readOnly
+             */                                                
+            get format() { return format; },
             /**
-             * Gets the clicked button index.
-             * @property {number} button index
-             */                                
-            get buttonIndex() { return buttonIndex; }
+             * Gets the mapping options.
+             * @property {Object} options
+             * @readOnly
+             */                                                
+            get options() { return options; }            
         });
     }
 });
 
-CallbackHandler.implement({
-    /**
-     * Applies the presentation policy to the handler.
-     * @method presenting
-     * @returns {miruken.callback.CallbackHandler} presenting handler.
-     * @for miruken.callback.CallbackHandler
-     */
-    presenting(policy) {
-        return policy ? this.decorate({
-            $handle: [
-                PresentationPolicy, presenting => policy.mergeInto(presenting)
-            ]
-        }) : this;
+/**
+ * Callback to map an `object` to `format`.
+ * @class MapTo
+ * @constructor
+ * @param   {Object}  object     -  object to map
+ * @param   {Any}     format     -  format specifier
+ * @param   {Object}  [options]  -  mapping options
+ * @extends MapCallback
+ */
+export const MapTo = MapCallback.extend({
+    constructor(object, format, options) {
+        this.base(format, options);
+        this.extend({
+            /**
+             * Gets the target object to map.
+             * @property {Object} object
+             * @readOnly
+             */                                
+            get object() { return object; }
+        });
     }
 });
 
 /**
+ * Callback to map a formatted `value` into an object.
+ * @class MapFrom
+ * @constructor
+ * @param   {Any}              value            -  formatted value
+ * @param   {Any}              format           -  format specifier
+ * @param   {Function|Object}  classOrInstance  -  instance or class to unmap
+ * @param   {Object}           [options]        -  mapping options
+ * @extends MapCallback
+ */
+export const MapFrom = MapCallback.extend({
+    constructor(value, format, classOrInstance, options) {
+        this.base(format, options);
+        if ($isNothing(classOrInstance)) {
+            classOrInstance = $classOf(value);
+        }
+        this.extend({
+            /**
+             * Gets the formatted value.
+             * @property {Any} value
+             * @readOnly
+             */                                
+            get value() { return value; },
+            /**
+             * Gets the class or instance to unmap into.
+             * @property {Function|Object} classOrInstance
+             * @readOnly
+             */                                                
+            get classOrInstance() { return classOrInstance; }
+        });
+    }
+});
+
+/**
+ * Handler for performing object mappings.
+ * @class MappingHandler
+ * @extends Handler
+ */        
+export const MappingHandler = Handler.extend(Mapper, {
+    mapTo(object, format, options) {
+        if ($isNothing(object)) {
+            throw new TypeError("Missing object to map.");
+        }
+        const mapTo = new MapTo(object, format, options);
+        if ($composer.handle(mapTo)) {
+            return mapTo.mapping;
+        }
+    },
+    mapFrom(value, format, classOrInstance, options) {
+        if ($isNothing(value)) {
+            throw new TypeError("Missing value to map from.");
+        }
+        const mapFrom = new MapFrom(value, format, classOrInstance, options);
+        if ($composer.handle(mapFrom)) {
+            return mapFrom.mapping;
+        }
+    }    
+});
+
+$handle(Handler.prototype, MapTo, function (mapTo, composer) {
+    const target = mapTo.object,
+          source = $classOf(target);
+    if ($isNothing(source)) { return false; }
+    return $mapTo.dispatch(this, mapTo, source, composer, false, m => mapTo.mapping = m);
+});
+
+$handle(Handler.prototype, MapFrom, function (mapFrom, composer) {
+    const classOrInstance = mapFrom.classOrInstance,
+          source          = $isFunction(classOrInstance)
+                          ? classOrInstance
+                          : $classOf(classOrInstance);
+    if ($isNothing(source)) { return false; }
+    return $mapFrom.dispatch(this, mapFrom, source, composer, false, m => mapFrom.mapping = m);
+});
+
+/**
+ * Base class for controllers.
+ * @class Controller
+ * @constructor
+ * @extends Handler
+ * @uses contextual
+ * @uses Validating
+ */
+export const Controller = Handler.extend(contextual, Validating, {
+    validate(target, scope) {
+        return _validateController(this, target, "validate", scope);
+    },
+    validateAsync(target, scope) {
+        return _validateController(this, target, "validateAsync", scope);
+    }
+});
+
+function _validateController(controller, target, method, scope) {
+    const context = controller.context;
+    if (!context) {
+        throw new Error("Validation requires a context to be available.");
+    }
+    const validator = Validator(context);
+    return validator[method].call(validator, target || controller, scope);
+}
+
+/**
  * Policy for describing modal presentation.
  * @class ModalPolicy
- * @extends miruken.mvc.PresentationPolicy
+ * @extends PresentationPolicy
  */
 export const ModalPolicy = PresentationPolicy.extend({
-    $properties: {
-        title:      '',
-        style:      null,
-        chrome:     true,
-        header:     false,
-        footer:     false,
-        forceClose: false,
-        buttons:    null
-    }
+    title:      "",
+    style:      null,
+    chrome:     true,
+    header:     false,
+    footer:     false,
+    forceClose: false,
+    buttons:    null
 });
 
 /**
@@ -472,24 +495,264 @@ export const ModalProviding = StrictProtocol.extend({
     /**
      * Presents the content in a modal dialog.
      * @method showModal
-     * @param   {Element}                  container  -  element modal bound to
-     * @param   {Element}                  content    -  modal content element
-     * @param   {miruken.mvc.ModalPolicy}  policy     -  modal policy options
-     * @param   {miruken.context.Context}  context    -  modal context
+     * @param   {Element}      container  -  element modal bound to
+     * @param   {Element}      content    -  modal content element
+     * @param   {ModalPolicy}  policy     -  modal policy options
+     * @param   {Context}      context    -  modal context
      * @returns {Promise} promise representing the modal result.
      */
     showModal(container, content, policy, context) {}
 });
 
-CallbackHandler.implement({
+Handler.implement({
     /**
      * Configures modal presentation options.
      * @method modal
      * @param {Object}  options  -  modal options
-     * @returns {miruken.callback.CallbackHandler} modal handler.
-     * @for miruken.callback.CallbackHandler
+     * @returns {Handler} modal handler.
+     * @for Handler
      */                                                                
     modal(options) {
         return this.presenting(new ModalPolicy(options));
     }
 });
+
+const formatMetadataKey = Symbol();
+
+/**
+ * Map to decorator.
+ * @method mapTo
+ * @param {Array}  ...types  -  types to map
+ */
+export function mapTo(...args) {
+    return decorate(addDefinition("mapTo", $mapTo, false, _filterFormat), args);
+}
+
+/**
+ * Map from decorator.
+ * @method mapFrom
+ * @param {Array}  ...types  -  types to map
+ */
+export function mapFrom(...args) {
+    return decorate(addDefinition("mapFrom", $mapFrom, false, _filterFormat), args);
+}
+
+/**
+ * Mapping formats.
+ * @method format
+ * @param {Array}  ...formats  -  mapping formats 
+ */
+export const format = Metadata.decorator(formatMetadataKey,
+    (target, key, descriptor, formats) => {
+        const property = isDescriptor(descriptor);
+        formats = $flatten(property ? formats : key);
+        if (formats.length === 0) { return; }
+        const metadata = property
+            ? Metadata.getOrCreateOwn(formatMetadataKey, target, key, () => new Set())
+            : Metadata.getOrCreateOwn(formatMetadataKey, target.prototype, () => new Set());
+        formats.forEach(format => metadata.add(format));
+    });
+
+function _filterFormat(key, mapCallback) {
+    const prototype = Object.getPrototypeOf(this);
+    let formats = format.get(prototype, key);
+    if (!formats || formats.size === 0) {
+        formats = format.get(prototype);        
+    }
+    return !formats || formats.size === 0 ||
+        [...formats].some(f => $equals(mapCallback.format, f));
+}
+
+/**
+ * Javascript Object Notation
+ * @property {Any} JsonFormat
+ */
+export const JsonFormat      = "json",
+             JsonContentType = "application/json";
+
+/**
+ * Handler for performing mapping to javascript object.
+ * @class JsonMapping
+ * @extends Handler
+ * @uses Mapper
+ */
+export const JsonMapping = Handler.extend(
+    format(JsonFormat, JsonContentType), {
+    @mapTo(Date)
+    mapDateToJson(mapTo) {
+        return mapTo.object.toJSON();
+    },
+    @mapTo(RegExp)
+    mapRegExpToJson(mapTo) {
+        return mapTo.object.toString();
+    },
+    @mapTo(Array)
+    mapArrayToJson(mapTo, composer) {
+        const array  = mapTo.object,
+              mapper = Mapper(composer);
+        return array.map(elem => mapper.mapTo(elem, mapTo.format, mapTo.options)); 
+    },
+    @mapTo
+    mapToJson(mapTo, composer) {
+        const object = mapTo.object;
+        if (!_canMapJson(object)) { return; }
+        if (_isJsonValue(object)) {
+            return object && object.valueOf();
+        }
+        const format  = mapTo.format,
+              options = mapTo.options,
+              spec    = options && options.spec,
+              raw     = $isPlainObject(object),
+              all     = !$isPlainObject(spec);              
+        if (raw || $isFunction(object.toJSON)) {
+            const json = raw ? raw : object.toJSON();
+            if (!all) {
+                const j = {};
+                for (let k in spec) j[k] = json[k];
+                mapTo.mapping = j;
+                return;
+            }
+            mapTo.mapping = json;
+            return;
+        }
+        const descriptors = getPropertyDescriptors(object),
+              mapper      = Mapper(composer),
+              json        = {};
+        Reflect.ownKeys(descriptors).forEach(key => {
+            if (all || (key in spec)) {
+                let keyValue = object[key];
+                if (keyValue === undefined) {
+                    return;
+                }
+                const map     = mapping.get(object, key),
+                      keySpec = all ? spec : spec[key];
+                if (!(all || keySpec) || (map && map.ignore)) {
+                    return;
+                }
+                const keyOptions = keySpec ? Object.create(options, {
+                    spec: { value: keySpec }
+                }) : options;
+                if (!_canMapJson(keyValue)) { return; }
+                if (_isJsonValue(keyValue)) {
+                    json[key] = keyValue && keyValue.valueOf();
+                    return;
+                }
+                const keyJson = mapper.mapTo(keyValue, format, keyOptions);
+                if (map && map.root) {
+                    Object.assign(json, keyJson);
+                } else {                 
+                    json[key] = keyJson;
+                }
+            }
+        });
+        return json;
+    },
+   
+    @mapFrom(Date)
+    mapDateFromJson(mapFrom) {
+        const date = mapFrom.value;
+        return instanceOf(date, Date) ? date : Date.parse(date);
+    },
+    @mapFrom(RegExp)
+    mapRegExpFromJson(mapFrom) {
+        const pattern   = mapFrom.value,
+              fragments = pattern.match(/\/(.*?)\/([gimy])?$/);              
+        return new RegExp(fragments[1], fragments[2] || "")
+    },
+    @mapFrom(Array)
+        mapArrayFromJson(mapFrom, composer) {
+        const array  = mapTo.value,
+              mapper = Mapper(composer);
+        return array.map(elem => mapper.mapFrom(elem, mapFrom.format, mapFrom.options)); 
+    },        
+    @mapFrom
+    mapFromJson(mapFrom, composer) {
+        const value = mapFrom.value;
+        if (!_canMapJson(value)) { return; }
+        if (_isJsonValue(value)) { return value; }
+        const classOrInstance = mapFrom.classOrInstance;
+        if ($isNothing(classOrInstance)) { return; }
+        const format  = mapFrom.format,
+              options = mapFrom.options,
+              object  = $isFunction(classOrInstance)
+                      ? Reflect.construct(classOrInstance, emptyArray)
+                      : classOrInstance;
+        const dynamic     = options && options.dynamic,
+              ignoreCase  = options && options.ignoreCase,
+              mapper      = Mapper(composer),
+              descriptors = getPropertyDescriptors(object);
+        Reflect.ownKeys(descriptors).forEach(key => {
+            const descriptor = descriptors[key];
+            if (_isSettableProperty(descriptor)) {
+                const map = mapping.get(object, key);
+                if (map && map.root) {
+                    object[key] = _mapFromJson(object, key, value, mapper, format, options);
+                }
+            }
+        });
+        for (let key in value) {
+            const descriptor = descriptors[key];
+            let   map        = mapping.get(object, key);
+            if (map && (map.root || map.ignore)) {
+                continue;  // ignore or already rooted
+            }
+            const keyValue = value[key];
+            if (keyValue === undefined) { continue; }
+            if (descriptor) {
+                if (_isSettableProperty(descriptor)) {
+                    object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
+                }
+            } else {
+                const lkey  = key.toLowerCase();
+                let   found = false;
+                for (let k in descriptors) {
+                    if (k.toLowerCase() === lkey) {
+                        if (_isSettableProperty(descriptors[k])) {                        
+                            object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && dynamic) {
+                    object[key] = keyValue;
+                }
+            }
+        }
+        return object;
+    }
+});
+
+function _canMapJson(value) {
+    return value === undefined
+        || !($isFunction(value) || $isSymbol(value));
+}
+
+function _isJsonValue(value) {
+    switch (typeOf(value)) {
+        case "null":
+        case "number":
+        case "string":
+        case "boolean":        
+            return true;
+        case "undefined":
+            return false;
+    }
+    return false;
+}
+
+function _mapFromJson(target, key, value, mapper, format, options) {
+    let type = design.get(target, key);
+    if ($isNothing(type)) { return value; };
+    if (Array.isArray(type)) {
+        type = type[0];
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+    }
+    return mapper.mapFrom(value, format, type, options);
+}
+
+function _isSettableProperty(descriptor) {
+    return !$isFunction(descriptor.value);
+}
