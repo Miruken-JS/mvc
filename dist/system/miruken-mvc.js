@@ -3,19 +3,7 @@
 System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruken-context'], function (_export, _context) {
     "use strict";
 
-    var Base, Protocol, StrictProtocol, Policy, Metadata, $isFunction, $isPlainObject, isDescriptor, Variance, $isNothing, $classOf, decorate, $flatten, $equals, design, typeOf, instanceOf, $isSymbol, getPropertyDescriptors, emptyArray, Handler, handles, $define, $handle, $composer, addDefinition, Validator, Validating, contextual, _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc2, _value2, _obj2, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked, MasterDetail, MasterDetailAware, mappingMetadataKey, mapping, $mapTo, $mapFrom, Mapping, Mapper, MapCallback, MapTo, MapFrom, MappingHandler, Controller, ModalPolicy, ModalProviding, formatMetadataKey, format, JsonFormat, JsonContentType, JsonMapping;
-
-    function _toConsumableArray(arr) {
-        if (Array.isArray(arr)) {
-            for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
-                arr2[i] = arr[i];
-            }
-
-            return arr2;
-        } else {
-            return Array.from(arr);
-        }
-    }
+    var Base, Protocol, StrictProtocol, Policy, Metadata, $isFunction, $isPlainObject, isDescriptor, Variance, $isNothing, $classOf, decorate, $flatten, $equals, design, typeOf, instanceOf, $isSymbol, getPropertyDescriptors, emptyArray, Handler, handle, $define, $handle, $composer, addDefinition, Validator, Validating, contextual, _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc, _value, _obj, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked, MasterDetail, MasterDetailAware, mappingMetadataKey, mapping, $mapTo, $mapFrom, Mapping, Mapper, MapCallback, MapTo, MapFrom, MappingHandler, Controller, ModalPolicy, ModalProviding, formatMetadataKey, format, JsonFormat, JsonContentType, JsonMapping;
 
     function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
         var desc = {};
@@ -44,6 +32,18 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
         }
 
         return desc;
+    }
+
+    function _toConsumableArray(arr) {
+        if (Array.isArray(arr)) {
+            for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
+                arr2[i] = arr[i];
+            }
+
+            return arr2;
+        } else {
+            return Array.from(arr);
+        }
     }
 
     function root(target, key, descriptor) {
@@ -105,7 +105,11 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
     }
 
     function _canMapJson(value) {
-        return value === undefined || !($isFunction(value) || $isSymbol(value));
+        return value !== undefined && !$isFunction(value) && !$isSymbol(value);
+    }
+
+    function _canSetProperty(descriptor) {
+        return !$isFunction(descriptor.value);
     }
 
     function _isJsonValue(value) {
@@ -115,28 +119,13 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
             case "string":
             case "boolean":
                 return true;
-            case "undefined":
-                return false;
         }
         return false;
     }
 
     function _mapFromJson(target, key, value, mapper, format, options) {
         var type = design.get(target, key);
-        if ($isNothing(type)) {
-            return value;
-        };
-        if (Array.isArray(type)) {
-            type = type[0];
-            if (!Array.isArray(value)) {
-                value = [value];
-            }
-        }
         return mapper.mapFrom(value, format, type, options);
-    }
-
-    function _isSettableProperty(descriptor) {
-        return !$isFunction(descriptor.value);
     }
     return {
         setters: [function (_mirukenCore) {
@@ -162,7 +151,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
             emptyArray = _mirukenCore.emptyArray;
         }, function (_mirukenCallback) {
             Handler = _mirukenCallback.Handler;
-            handles = _mirukenCallback.handles;
+            handle = _mirukenCallback.handle;
             $define = _mirukenCallback.$define;
             $handle = _mirukenCallback.$handle;
             $composer = _mirukenCallback.$composer;
@@ -215,17 +204,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
 
             _export('ButtonClicked', ButtonClicked);
 
-            Handler.implement({
-                presenting: function presenting(policy) {
-                    var _desc, _value, _obj;
-
-                    return policy ? this.decorate((_obj = {
-                        mergePolicy: function mergePolicy(presenting) {
-                            policy.mergeInto(presenting);
-                        }
-                    }, (_applyDecoratedDescriptor(_obj, 'mergePolicy', [handles], Object.getOwnPropertyDescriptor(_obj, 'mergePolicy'), _obj)), _obj)) : this;
-                }
-            });
+            Handler.registerPolicy(PresentationPolicy, "presenting");
 
             _export('MasterDetail', MasterDetail = Protocol.extend({
                 getSelectedDetail: function getSelectedDetail(detailClass) {},
@@ -340,7 +319,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
             _export('MappingHandler', MappingHandler = Handler.extend(Mapper, {
                 mapTo: function mapTo(object, format, options) {
                     if ($isNothing(object)) {
-                        throw new TypeError("Missing object to map.");
+                        throw new TypeError("Missing object to map");
                     }
                     var mapTo = new MapTo(object, format, options);
                     if ($composer.handle(mapTo)) {
@@ -349,7 +328,15 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                 },
                 mapFrom: function mapFrom(value, format, classOrInstance, options) {
                     if ($isNothing(value)) {
-                        throw new TypeError("Missing value to map from.");
+                        throw new TypeError("Missing value to map from");
+                    }
+                    if (Array.isArray(classOrInstance)) {
+                        var type = classOrInstance[0];
+                        if (type && !$isFunction(type) && !Array.isArray(type)) {
+                            throw new TypeError("Cannot infer array type");
+                        }
+                    } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
+                        classOrInstance = [classOrInstance];
                     }
                     var mapFrom = new MapFrom(value, format, classOrInstance, options);
                     if ($composer.handle(mapFrom)) {
@@ -445,7 +432,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
 
             _export('JsonContentType', JsonContentType);
 
-            _export('JsonMapping', JsonMapping = Handler.extend(format(JsonFormat, JsonContentType), (_dec = mapTo(Date), _dec2 = mapTo(RegExp), _dec3 = mapTo(Array), _dec4 = mapFrom(Date), _dec5 = mapFrom(RegExp), _dec6 = mapFrom(Array), (_obj2 = {
+            _export('JsonMapping', JsonMapping = Handler.extend(format(JsonFormat, JsonContentType), (_dec = mapTo(Date), _dec2 = mapTo(RegExp), _dec3 = mapTo(Array), _dec4 = mapFrom(Date), _dec5 = mapFrom(RegExp), _dec6 = mapFrom(Array), (_obj = {
                 mapDateToJson: function mapDateToJson(mapTo) {
                     return mapTo.object.toJSON();
                 },
@@ -473,16 +460,14 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                         raw = $isPlainObject(object),
                         all = !$isPlainObject(spec);
                     if (raw || $isFunction(object.toJSON)) {
-                        var _json = raw ? raw : object.toJSON();
+                        var _json = raw ? object : object.toJSON();
                         if (!all) {
                             var j = {};
                             for (var k in spec) {
                                 j[k] = _json[k];
-                            }mapTo.mapping = j;
-                            return;
+                            }return j;
                         }
-                        mapTo.mapping = _json;
-                        return;
+                        return _json;
                     }
                     var descriptors = getPropertyDescriptors(object),
                         mapper = Mapper(composer),
@@ -528,10 +513,12 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                     return new RegExp(fragments[1], fragments[2] || "");
                 },
                 mapArrayFromJson: function mapArrayFromJson(mapFrom, composer) {
-                    var array = mapTo.value,
+                    var array = mapFrom.value,
                         mapper = Mapper(composer);
+                    var type = mapFrom.classOrInstance;
+                    type = Array.isArray(type) ? type[0] : undefined;
                     return array.map(function (elem) {
-                        return mapper.mapFrom(elem, mapFrom.format, mapFrom.options);
+                        return mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options);
                     });
                 },
                 mapFromJson: function mapFromJson(mapFrom, composer) {
@@ -555,7 +542,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                         descriptors = getPropertyDescriptors(object);
                     Reflect.ownKeys(descriptors).forEach(function (key) {
                         var descriptor = descriptors[key];
-                        if (_isSettableProperty(descriptor)) {
+                        if (_canSetProperty(descriptor)) {
                             var map = mapping.get(object, key);
                             if (map && map.root) {
                                 object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -573,7 +560,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                             continue;
                         }
                         if (descriptor) {
-                            if (_isSettableProperty(descriptor)) {
+                            if (_canSetProperty(descriptor)) {
                                 object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                             }
                         } else {
@@ -581,7 +568,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                             var found = false;
                             for (var k in descriptors) {
                                 if (k.toLowerCase() === lkey) {
-                                    if (_isSettableProperty(descriptors[k])) {
+                                    if (_canSetProperty(descriptors[k])) {
                                         object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                                     }
                                     found = true;
@@ -595,7 +582,7 @@ System.register(['miruken-core', 'miruken-callback', 'miruken-validate', 'miruke
                     }
                     return object;
                 }
-            }, (_applyDecoratedDescriptor(_obj2, 'mapDateToJson', [_dec], Object.getOwnPropertyDescriptor(_obj2, 'mapDateToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapRegExpToJson', [_dec2], Object.getOwnPropertyDescriptor(_obj2, 'mapRegExpToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapArrayToJson', [_dec3], Object.getOwnPropertyDescriptor(_obj2, 'mapArrayToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapToJson', [mapTo], Object.getOwnPropertyDescriptor(_obj2, 'mapToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapDateFromJson', [_dec4], Object.getOwnPropertyDescriptor(_obj2, 'mapDateFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapRegExpFromJson', [_dec5], Object.getOwnPropertyDescriptor(_obj2, 'mapRegExpFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapArrayFromJson', [_dec6], Object.getOwnPropertyDescriptor(_obj2, 'mapArrayFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapFromJson', [mapFrom], Object.getOwnPropertyDescriptor(_obj2, 'mapFromJson'), _obj2)), _obj2))));
+            }, (_applyDecoratedDescriptor(_obj, 'mapDateToJson', [_dec], Object.getOwnPropertyDescriptor(_obj, 'mapDateToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpToJson', [_dec2], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayToJson', [_dec3], Object.getOwnPropertyDescriptor(_obj, 'mapArrayToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapToJson', [mapTo], Object.getOwnPropertyDescriptor(_obj, 'mapToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapDateFromJson', [_dec4], Object.getOwnPropertyDescriptor(_obj, 'mapDateFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpFromJson', [_dec5], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayFromJson', [_dec6], Object.getOwnPropertyDescriptor(_obj, 'mapArrayFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapFromJson', [mapFrom], Object.getOwnPropertyDescriptor(_obj, 'mapFromJson'), _obj)), _obj))));
 
             _export('JsonMapping', JsonMapping);
         }

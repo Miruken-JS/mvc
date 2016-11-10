@@ -2,7 +2,7 @@ import {
     Base, Protocol, StrictProtocol, Policy
 } from "miruken-core";
 
-import { Handler, handles } from "miruken-callback";
+import { Handler, handle } from "miruken-callback";
 
 /**
  * Protocol for rendering a view on the screen.
@@ -86,19 +86,4 @@ export const ButtonClicked = Base.extend({
     }
 });
 
-Handler.implement({
-    /**
-     * Applies the presentation policy to the handler.
-     * @method presenting
-     * @returns {Handler} presenting handler.
-     * @for Handler
-     */
-    presenting(policy) {
-        return policy ? this.decorate({
-            @handles
-            mergePolicy(presenting) {
-                policy.mergeInto(presenting)                
-            }
-        }) : this;
-    }
-});
+Handler.registerPolicy(PresentationPolicy, "presenting");

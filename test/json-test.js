@@ -11,13 +11,15 @@ const Person = Base.extend({
     age:       undefined,
     @ignore
     password:  undefined,
-    getHobbies() { return this._hobbies; },
-    setHobbies(value) { this._hobbies = value; }
+    get hobbies() { return this._hobbies; },
+    set hobbies(value) { this._hobbies = value; }
 });
 
 const Doctor = Person.extend({
     @design(Person)
-    patient: undefined
+    nurse: undefined,
+    @design([Person])
+    patients: undefined    
 });
 
 const PersonWrapper = Base.extend({
@@ -80,39 +82,76 @@ describe("JsonMapping", () => {
             const doctor = mapper.mapFrom({
                 firstName: "Mitchell",
                 lastName:  "Moskowitz",
-                hobbies:   undefined,
-                age:       0,
-                patient: {
+                hobbies:   ["golf", "cooking", "reading"],
+                nurse: {
+                    firstName:  "Clara",
+                    lastName:   "Barton",
+                    age:         36
+                },                
+                patients: [{
                     firstName:  "Lionel",
                     lastName:   "Messi",
                     occupation: "soccer",
-                    age:       24
-                }
+                    age:         24
+                }]
             }, JsonFormat, Doctor, { dynamic: true });
             expect(doctor).to.be.instanceOf(Doctor);
-            expect(doctor.patient).to.be.instanceOf(Person);
-            expect(doctor.patient.firstName).to.equal("Lionel");
-            expect(doctor.patient.lastName).to.equal("Messi");
-            expect(doctor.patient.occupation).to.equal("soccer");
+            expect(doctor.firstName).to.equal("Mitchell");
+            expect(doctor.lastName).to.equal("Moskowitz");
+            expect(doctor.hobbies).to.eql(["golf", "cooking", "reading"]);
+            expect(doctor.nurse).to.be.instanceOf(Person);
+            expect(doctor.nurse.firstName).to.equal("Clara");
+            expect(doctor.nurse.lastName).to.equal("Barton");
+            expect(doctor.nurse.age).to.equal(36);
+            expect(doctor.patients[0]).to.be.instanceOf(Person);
+            expect(doctor.patients[0].firstName).to.equal("Lionel");
+            expect(doctor.patients[0].lastName).to.equal("Messi");
+            expect(doctor.patients[0].age).to.equal(24);
         });
 
         it("should map all related from json ignoring case", () => {
             const doctor = mapper.mapFrom({
                 FirstNAME: "Mitchell",
                 LASTName:  "Moskowitz",
-                patient: {
-                    FIRSTName:  "Lionel",
-                    lastNAME:   "Messi"
+                nurse: {
+                    FIRSTName:  "Clara",
+                    lastNAME:   "Barton"
                 }
             }, JsonFormat, Doctor);
             expect(doctor).to.be.instanceOf(Doctor);
-            expect(doctor.patient).to.be.instanceOf(Person);
+            expect(doctor.nurse).to.be.instanceOf(Person);
             expect(doctor.firstName).to.equal("Mitchell");
             expect(doctor.lastName).to.equal("Moskowitz");            
-            expect(doctor.patient.firstName).to.equal("Lionel");
-            expect(doctor.patient.lastName).to.equal("Messi");
+            expect(doctor.nurse.firstName).to.equal("Clara");
+            expect(doctor.nurse.lastName).to.equal("Barton");
         });
 
+        it("should map arrays", () => {
+            const people = mapper.mapFrom([{
+                     firstName:  "David",
+                     lastName:   "Beckham",
+                     occupation: "soccer"
+                  }], JsonFormat, [Person], { dynamic: true }),
+                  person = people[0];
+            expect(person).to.be.instanceOf(Person);
+            expect(person.firstName).to.equal("David");
+            expect(person.lastName).to.equal("Beckham");
+            expect(person.occupation).to.equal("soccer");
+        });
+
+        it("should infer arrays", () => {
+            const people = mapper.mapFrom([{
+                     firstName:  "David",
+                     lastName:   "Beckham",
+                     occupation: "soccer"
+                  }], JsonFormat, Person, { dynamic: true }),
+                  person = people[0];
+            expect(person).to.be.instanceOf(Person);
+            expect(person.firstName).to.equal("David");
+            expect(person.lastName).to.equal("Beckham");
+            expect(person.occupation).to.equal("soccer");
+        });
+        
         it("should map rooted json", () => {
             const wrapper = mapper.mapFrom({
                     firstName:  "David",
@@ -127,7 +166,7 @@ describe("JsonMapping", () => {
         });
     });
 
-    describe.only("#mapTo", () => {
+    describe("#mapTo", () => {
         it("should ignore symbols", () => {
             expect(mapper.mapTo(Symbol(), JsonFormat)).to.be.undefined;
         });
@@ -189,50 +228,73 @@ describe("JsonMapping", () => {
         });
         
         it("should map nested properties", () => {
-            const person = new Person({
-                      firstName: "Lionel",
-                      lastName:  "Messi",
-                      age:       24
-                  }),
-                  doctor = new Doctor({
+            const doctor = new Doctor({
                       firstName: "Mitchell",
                       lastName:  "Moskowitz",
+                      nurse: new Person({
+                          firstName: "Clara",
+                          lastName:  "Barton",
+                          age:       36
+                      }),
+                      patients: [
+                          new Person({
+                              firstName: "Lionel",
+                              lastName:  "Messi",
+                              age:       24
+                          })
+                      ]
                   });
-            doctor.patient = person;
             const json = mapper.mapTo(doctor, JsonFormat);
             expect(json).to.eql({
                 firstName: "Mitchell",
                 lastName:  "Moskowitz",
-                patient: {
+                nurse: {
+                    firstName: "Clara",
+                    lastName:  "Barton",
+                    age:       36
+                },
+                patients: [{
                     firstName: "Lionel",
                     lastName:  "Messi",
                     age:       24
-                }
+                }]
             });
         });
 
         it("should map specific nested properties", () => {
-            const person = new Person({
-                      firstName: "Lionel",
-                      lastName:  "Messi",
-                      age:       24
-                  }),
-                  doctor = new Doctor({
+            const doctor = new Doctor({
                       firstName: "Mitchell",
                       lastName:  "Moskowitz",
-                  });
-            doctor.patient = person;
+                      nurse: new Person({
+                          firstName: "Clara",
+                          lastName:  "Barton",
+                          age:       36
+                      }),
+                      patients: [
+                          new Person({
+                              firstName: "Lionel",
+                              lastName:  "Messi",
+                              age:       24
+                          })
+                      ]
+                  });            
             const json = mapper.mapTo(doctor, JsonFormat, { spec: {
-                patient: {
+                nurse: {
                     lastName: true,
-                    age: true
+                    age:      true
+                },
+                patients: {
+                    firstName: true
                 }}
             });
             expect(json).to.eql({
-                patient: {
-                    lastName:  "Messi",
-                    age:       24
-                }
+                nurse: {
+                    lastName:  "Barton",
+                    age:       36
+                },
+                patients: [{
+                    firstName: "Lionel",
+                }]
             });
         });
 
@@ -265,135 +327,19 @@ describe("JsonMapping", () => {
                 age: 32
             });
         });
-    });
-    
-    describe("#map", () => {
-        it("should map one-to-one", () => {
-            const data = {
-                firstName: "Daniel",
-                lastName:  "Worrel",
-                patient:   {
-                    firstName: "Emitt",
-                    lastName:  "Smith"
-                }
-            };
-            const doctor  = new Doctor(data),
-                  patient = doctor.patient; 
-            expect(doctor.firstName).to.equal("Daniel");
-            expect(doctor.lastName).to.equal("Worrel");
-            expect(patient).to.be.instanceOf(Person);
-            expect(patient.firstName).to.equal("Emitt");
-            expect(patient.lastName).to.equal("Smith");
-        });
-
-        it("should map one-to-many", () => {
-            const data = {
-                firstName: "Daniel",
-                lastName:  "Worrel",
-                patient:   [{
-                    firstName: "Emitt",
-                    lastName:  "Smith"
-                }, {
-                    firstName: "Tony",
-                    lastName:  "Romo"
-                }]  
-            };
-            const doctor   = new Doctor(data),
-                  patients = doctor.patient; 
-            expect(doctor.firstName).to.equal("Daniel");
-            expect(doctor.lastName).to.equal("Worrel");
-            expect(patients).to.be.instanceOf(Array);
-            expect(patients).to.have.length(2);
-            expect(patients[0].firstName).to.equal("Emitt");
-            expect(patients[0].lastName).to.equal("Smith");
-            expect(patients[1].firstName).to.equal("Tony");
-            expect(patients[1].lastName).to.equal("Romo");
-        });
-
-        it("should ignore case", () => {
-            const data = {
-                fiRstNamE: "Bruce",
-                LaStNaMe:  "Lee"
-            };
-            const person = new Person(data);
-            expect(person.firstName).to.equal("Bruce");
-            expect(person.lastName).to.equal("Lee");
-        });
-
-        it("should preserve grouping", () => {
-            const data = {
-                patient:   [[{
-                    firstName: "Abbot",
-                    }, {
-                    firstName: "Costello",
-                    }],
-                    [{
-                    firstName: "Bill"
-                    }]
-                ]  
-            };
-            const doctor = new Doctor(data),
-                  group1 = doctor.patient[0],
-                  group2 = doctor.patient[1];
-            expect(group1[0].firstName).to.equal("Abbot");
-            expect(group1[1].firstName).to.equal("Costello");
-            expect(group2[0].firstName).to.equal("Bill");
-        });
-
-        it("should use root mapping", () => {
-            const PersonModel = Model.extend({
-                $properties: {
-                    person: { map: Person, root: true }
-                }
-            });
-            const data = {
-                firstName: "Henry",
-                lastName:  "Ford"
-            };
-            const model = new PersonModel(data);
-            expect(model.person.firstName).to.equal("Henry");
-            expect(model.person.lastName).to.equal("Ford");
-        });
 
         it("should map arrays", () => {
-            const Child = Model.extend({
-                $properties: {
-                    name: { map: upper }
-                }
-            });
-            const Parent = Model.extend({
-                $properties: {
-                    name: { map: upper },
-                    children: { map: Child }
-                }
-            });
-            const data = [{
-                name: "John",
-                children:   [{
-                    name: "Ralph"
-                }, {
-                    name: "Susan"
-                }]
-                }, {
-                name: "Beth",
-                children:   [{
-                    name: "Lisa"
-                }, {
-                    name: "Mike"
-                }]
-                }
-            ];
-            const parents = Model.map(data, Parent, { dynamic: true });
-            expect(parents).to.have.length(2);
-            expect(parents[0].name).to.equal("JOHN");
-            expect(parents[1].name).to.equal("BETH");
-            expect(parents[0].children[0].name).to.equal("RALPH");
-            expect(parents[0].children[1].name).to.equal("SUSAN");
-            expect(parents[1].children[0].name).to.equal("LISA");
-            expect(parents[1].children[1].name).to.equal("MIKE");
-            function upper(str) {
-                return str.toUpperCase();
-            }
-        });        
+            const wrappers = [new PersonWrapper({
+                      firstName: "Franck",
+                      lastName:  "Ribery",
+                      age:       32
+                  })],
+                  json = mapper.mapTo(wrappers, JsonFormat);
+            expect(json).to.eql([{
+                firstName: "Franck",
+                lastName:  "Ribery",
+                age:       32
+            }]);
+        });
     });
 });

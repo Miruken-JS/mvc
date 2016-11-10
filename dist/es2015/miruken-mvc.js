@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.JsonMapping = exports.JsonContentType = exports.JsonFormat = exports.format = exports.ModalProviding = exports.ModalPolicy = exports.Controller = exports.MappingHandler = exports.MapFrom = exports.MapTo = exports.Mapper = exports.Mapping = exports.$mapFrom = exports.$mapTo = exports.mapping = exports.MasterDetailAware = exports.MasterDetail = exports.ButtonClicked = exports.PresentationPolicy = exports.ViewRegionAware = exports.ViewRegion = undefined;
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc2, _value2, _obj2;
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc, _value, _obj;
 
 exports.root = root;
 exports.ignore = ignore;
@@ -19,8 +19,6 @@ var _mirukenCallback = require('miruken-callback');
 var _mirukenValidate = require('miruken-validate');
 
 var _mirukenContext = require('miruken-context');
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
     var desc = {};
@@ -50,6 +48,8 @@ function _applyDecoratedDescriptor(target, property, decorators, descriptor, con
 
     return desc;
 }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 var ViewRegion = exports.ViewRegion = _mirukenCore.StrictProtocol.extend({
     get name() {},
@@ -84,17 +84,7 @@ var ButtonClicked = exports.ButtonClicked = _mirukenCore.Base.extend({
     }
 });
 
-_mirukenCallback.Handler.implement({
-    presenting: function presenting(policy) {
-        var _desc, _value, _obj;
-
-        return policy ? this.decorate((_obj = {
-            mergePolicy: function mergePolicy(presenting) {
-                policy.mergeInto(presenting);
-            }
-        }, (_applyDecoratedDescriptor(_obj, 'mergePolicy', [_mirukenCallback.handles], Object.getOwnPropertyDescriptor(_obj, 'mergePolicy'), _obj)), _obj)) : this;
-    }
-});
+_mirukenCallback.Handler.registerPolicy(PresentationPolicy, "presenting");
 
 var MasterDetail = exports.MasterDetail = _mirukenCore.Protocol.extend({
     getSelectedDetail: function getSelectedDetail(detailClass) {},
@@ -204,7 +194,7 @@ var MapFrom = exports.MapFrom = MapCallback.extend({
 var MappingHandler = exports.MappingHandler = _mirukenCallback.Handler.extend(Mapper, {
     mapTo: function mapTo(object, format, options) {
         if ((0, _mirukenCore.$isNothing)(object)) {
-            throw new TypeError("Missing object to map.");
+            throw new TypeError("Missing object to map");
         }
         var mapTo = new MapTo(object, format, options);
         if (_mirukenCallback.$composer.handle(mapTo)) {
@@ -213,7 +203,15 @@ var MappingHandler = exports.MappingHandler = _mirukenCallback.Handler.extend(Ma
     },
     mapFrom: function mapFrom(value, format, classOrInstance, options) {
         if ((0, _mirukenCore.$isNothing)(value)) {
-            throw new TypeError("Missing value to map from.");
+            throw new TypeError("Missing value to map from");
+        }
+        if (Array.isArray(classOrInstance)) {
+            var type = classOrInstance[0];
+            if (type && !(0, _mirukenCore.$isFunction)(type) && !Array.isArray(type)) {
+                throw new TypeError("Cannot infer array type");
+            }
+        } else if (Array.isArray(value) && (0, _mirukenCore.$isFunction)(classOrInstance)) {
+            classOrInstance = [classOrInstance];
         }
         var mapFrom = new MapFrom(value, format, classOrInstance, options);
         if (_mirukenCallback.$composer.handle(mapFrom)) {
@@ -330,7 +328,7 @@ function _filterFormat(key, mapCallback) {
 var JsonFormat = exports.JsonFormat = "json",
     JsonContentType = exports.JsonContentType = "application/json";
 
-var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(JsonFormat, JsonContentType), (_dec = mapTo(Date), _dec2 = mapTo(RegExp), _dec3 = mapTo(Array), _dec4 = mapFrom(Date), _dec5 = mapFrom(RegExp), _dec6 = mapFrom(Array), (_obj2 = {
+var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(JsonFormat, JsonContentType), (_dec = mapTo(Date), _dec2 = mapTo(RegExp), _dec3 = mapTo(Array), _dec4 = mapFrom(Date), _dec5 = mapFrom(RegExp), _dec6 = mapFrom(Array), (_obj = {
     mapDateToJson: function mapDateToJson(mapTo) {
         return mapTo.object.toJSON();
     },
@@ -358,16 +356,14 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
             raw = (0, _mirukenCore.$isPlainObject)(object),
             all = !(0, _mirukenCore.$isPlainObject)(spec);
         if (raw || (0, _mirukenCore.$isFunction)(object.toJSON)) {
-            var _json = raw ? raw : object.toJSON();
+            var _json = raw ? object : object.toJSON();
             if (!all) {
                 var j = {};
                 for (var k in spec) {
                     j[k] = _json[k];
-                }mapTo.mapping = j;
-                return;
+                }return j;
             }
-            mapTo.mapping = _json;
-            return;
+            return _json;
         }
         var descriptors = (0, _mirukenCore.getPropertyDescriptors)(object),
             mapper = Mapper(composer),
@@ -413,10 +409,12 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
         return new RegExp(fragments[1], fragments[2] || "");
     },
     mapArrayFromJson: function mapArrayFromJson(mapFrom, composer) {
-        var array = mapTo.value,
+        var array = mapFrom.value,
             mapper = Mapper(composer);
+        var type = mapFrom.classOrInstance;
+        type = Array.isArray(type) ? type[0] : undefined;
         return array.map(function (elem) {
-            return mapper.mapFrom(elem, mapFrom.format, mapFrom.options);
+            return mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options);
         });
     },
     mapFromJson: function mapFromJson(mapFrom, composer) {
@@ -440,7 +438,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
             descriptors = (0, _mirukenCore.getPropertyDescriptors)(object);
         Reflect.ownKeys(descriptors).forEach(function (key) {
             var descriptor = descriptors[key];
-            if (_isSettableProperty(descriptor)) {
+            if (_canSetProperty(descriptor)) {
                 var map = mapping.get(object, key);
                 if (map && map.root) {
                     object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -458,7 +456,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
                 continue;
             }
             if (descriptor) {
-                if (_isSettableProperty(descriptor)) {
+                if (_canSetProperty(descriptor)) {
                     object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                 }
             } else {
@@ -466,7 +464,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
                 var found = false;
                 for (var k in descriptors) {
                     if (k.toLowerCase() === lkey) {
-                        if (_isSettableProperty(descriptors[k])) {
+                        if (_canSetProperty(descriptors[k])) {
                             object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                         }
                         found = true;
@@ -480,10 +478,14 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
         }
         return object;
     }
-}, (_applyDecoratedDescriptor(_obj2, 'mapDateToJson', [_dec], Object.getOwnPropertyDescriptor(_obj2, 'mapDateToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapRegExpToJson', [_dec2], Object.getOwnPropertyDescriptor(_obj2, 'mapRegExpToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapArrayToJson', [_dec3], Object.getOwnPropertyDescriptor(_obj2, 'mapArrayToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapToJson', [mapTo], Object.getOwnPropertyDescriptor(_obj2, 'mapToJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapDateFromJson', [_dec4], Object.getOwnPropertyDescriptor(_obj2, 'mapDateFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapRegExpFromJson', [_dec5], Object.getOwnPropertyDescriptor(_obj2, 'mapRegExpFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapArrayFromJson', [_dec6], Object.getOwnPropertyDescriptor(_obj2, 'mapArrayFromJson'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapFromJson', [mapFrom], Object.getOwnPropertyDescriptor(_obj2, 'mapFromJson'), _obj2)), _obj2)));
+}, (_applyDecoratedDescriptor(_obj, 'mapDateToJson', [_dec], Object.getOwnPropertyDescriptor(_obj, 'mapDateToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpToJson', [_dec2], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayToJson', [_dec3], Object.getOwnPropertyDescriptor(_obj, 'mapArrayToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapToJson', [mapTo], Object.getOwnPropertyDescriptor(_obj, 'mapToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapDateFromJson', [_dec4], Object.getOwnPropertyDescriptor(_obj, 'mapDateFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpFromJson', [_dec5], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayFromJson', [_dec6], Object.getOwnPropertyDescriptor(_obj, 'mapArrayFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapFromJson', [mapFrom], Object.getOwnPropertyDescriptor(_obj, 'mapFromJson'), _obj)), _obj)));
 
 function _canMapJson(value) {
-    return value === undefined || !((0, _mirukenCore.$isFunction)(value) || (0, _mirukenCore.$isSymbol)(value));
+    return value !== undefined && !(0, _mirukenCore.$isFunction)(value) && !(0, _mirukenCore.$isSymbol)(value);
+}
+
+function _canSetProperty(descriptor) {
+    return !(0, _mirukenCore.$isFunction)(descriptor.value);
 }
 
 function _isJsonValue(value) {
@@ -493,26 +495,11 @@ function _isJsonValue(value) {
         case "string":
         case "boolean":
             return true;
-        case "undefined":
-            return false;
     }
     return false;
 }
 
 function _mapFromJson(target, key, value, mapper, format, options) {
     var type = _mirukenCore.design.get(target, key);
-    if ((0, _mirukenCore.$isNothing)(type)) {
-        return value;
-    };
-    if (Array.isArray(type)) {
-        type = type[0];
-        if (!Array.isArray(value)) {
-            value = [value];
-        }
-    }
     return mapper.mapFrom(value, format, type, options);
-}
-
-function _isSettableProperty(descriptor) {
-    return !(0, _mirukenCore.$isFunction)(descriptor.value);
 }

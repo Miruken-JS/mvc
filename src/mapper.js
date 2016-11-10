@@ -145,7 +145,7 @@ export const MapFrom = MapCallback.extend({
 export const MappingHandler = Handler.extend(Mapper, {
     mapTo(object, format, options) {
         if ($isNothing(object)) {
-            throw new TypeError("Missing object to map.");
+            throw new TypeError("Missing object to map");
         }
         const mapTo = new MapTo(object, format, options);
         if ($composer.handle(mapTo)) {
@@ -154,7 +154,15 @@ export const MappingHandler = Handler.extend(Mapper, {
     },
     mapFrom(value, format, classOrInstance, options) {
         if ($isNothing(value)) {
-            throw new TypeError("Missing value to map from.");
+            throw new TypeError("Missing value to map from");
+        }
+        if (Array.isArray(classOrInstance)) {
+            const type = classOrInstance[0];
+            if (type && !$isFunction(type) && !Array.isArray(type)) {
+                throw new TypeError("Cannot infer array type");
+            }
+        } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
+            classOrInstance = [classOrInstance];
         }
         const mapFrom = new MapFrom(value, format, classOrInstance, options);
         if ($composer.handle(mapFrom)) {

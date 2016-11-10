@@ -1,7 +1,7 @@
 import { Base, design } from "miruken-core";
 import { Context } from "miruken-context";
 import {
-    ValidationCallbackHandler, ValidateJsCallbackHandler,
+    ValidationHandler, ValidateJsHandler,
     required, number, applyConstraints
 } from "miruken-validate";
 
@@ -16,10 +16,7 @@ const Person = Base.extend({
     lastName:  undefined,
     @number.onlyInteger
     @number.greaterThan(11)    
-    age:       undefined,
-    password:  undefined,
-    getHobbies() { return this._hobbies; },
-    setHobbies(value) { this._hobbies = value; }
+    age:       undefined
 });
 
 const Doctor = Person.extend({
@@ -38,7 +35,7 @@ describe("Controller", () => {
     let context;
     beforeEach(() => {
         context   = new Context();
-        context.addHandlers(new ValidationCallbackHandler(), new ValidateJsCallbackHandler());
+        context.addHandlers(new ValidationHandler(), new ValidateJsHandler());
     });
 
     describe("#validate", () => {
@@ -63,7 +60,7 @@ describe("Controller", () => {
         it("should validate object", () => {
             const controller     = new PersonController();
             controller.context = context;
-            const results = controller.validate(new Person);
+            const results = controller.validate(new Person({age: 2}));
             expect(results.valid).to.be.false;
             expect(results.firstName.errors.presence).to.eql([{
                 message: "First name can't be blank",
@@ -75,13 +72,13 @@ describe("Controller", () => {
             }]);
             expect(results.age.errors.numericality).to.deep.include.members([{
                   message: "Age must be greater than 11",
-                  value:   0
+                  value:   2
             }]);
         });
 
         it("should access validation errors from controller", () => {
-            const controller     = new PersonController();
-            controller.person  = new Person();
+            const controller   = new PersonController();
+            controller.person  = new Person({age:2});
             controller.context = context;
             controller.validate();
             const results = controller.$validation;
@@ -98,7 +95,7 @@ describe("Controller", () => {
             expect(results.errors.numericality).to.deep.include.members([{
                   key:     "person.age",
                   message: "Age must be greater than 11",
-                  value:   0
+                  value:   2
             }]);
         });
     });
@@ -125,9 +122,9 @@ describe("Controller", () => {
         });
 
         it("should validate object", done => {
-            const controller     = new PersonController();
+            const controller   = new PersonController();
             controller.context = context;
-            controller.validateAsync(new Person).then(results => {
+            controller.validateAsync(new Person({age:2})).then(results => {
                 expect(results.valid).to.be.false;
                 expect(results.firstName.errors.presence).to.eql([{
                     message: "First name can't be blank",
@@ -139,15 +136,15 @@ describe("Controller", () => {
                 }]);
                 expect(results.age.errors.numericality).to.deep.include.members([{
                     message: "Age must be greater than 11",
-                    value:   0
+                    value:   2
                 }]);
                 done();
             });
         });
 
         it("should access validation errors from controller", done => {
-            const controller     = new PersonController();
-            controller.person  = new Person();
+            const controller   = new PersonController();
+            controller.person  = new Person({age:2});
             controller.context = context;
             controller.validateAsync().then(() => {
                 const results = controller.$validation;
@@ -164,7 +161,7 @@ describe("Controller", () => {
                 expect(results.errors.numericality).to.deep.include.members([{
                     key:     "person.age",
                     message: "Age must be greater than 11",
-                    value:   0
+                    value:   2
                 }]);
                 done();
             });
@@ -187,7 +184,7 @@ describe("Controller", () => {
         it("should validate the controller implicitly with traversal", done => {
             const controller = new PersonController();
             controller.context = context;
-            controller.context.$descendantOrSelf().$validAsync(controller)
+            controller.context.$selfOrDescendant().$validAsync(controller)
                 .resolve(Controller).catch(err => {
                     expect(controller.$validation.valid).to.be.false;
                     expect(controller.$validation.person.errors.presence).to.eql([{
@@ -199,7 +196,7 @@ describe("Controller", () => {
         });        
     });
 
-    describe("CallbackHandler", () => {
+    describe("Handler", () => {
         describe("#modal", () => {
             it("should define modal policy", () => {
                 var modal = context.modal();

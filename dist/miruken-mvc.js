@@ -1,5 +1,5 @@
 import {Base,Protocol,StrictProtocol,Policy,Metadata,$isFunction,$isPlainObject,isDescriptor,Variance,$isNothing,$classOf,decorate,$flatten,$equals,design,typeOf,instanceOf,$isSymbol,getPropertyDescriptors,emptyArray} from 'miruken-core';
-import {Handler,handles,$define,$handle,$composer,addDefinition} from 'miruken-callback';
+import {Handler,handle,$define,$handle,$composer,addDefinition} from 'miruken-callback';
 import {Validator,Validating} from 'miruken-validate';
 import {contextual} from 'miruken-context';
 
@@ -85,22 +85,7 @@ export const ButtonClicked = Base.extend({
     }
 });
 
-Handler.implement({
-    /**
-     * Applies the presentation policy to the handler.
-     * @method presenting
-     * @returns {Handler} presenting handler.
-     * @for Handler
-     */
-    presenting(policy) {
-        return policy ? this.decorate({
-            @handles
-            mergePolicy(presenting) {
-                policy.mergeInto(presenting)                
-            }
-        }) : this;
-    }
-});
+Handler.registerPolicy(PresentationPolicy, "presenting");
 
 /**
  * Protocol for managing master-detail relationships.
@@ -411,7 +396,7 @@ export const MapFrom = MapCallback.extend({
 export const MappingHandler = Handler.extend(Mapper, {
     mapTo(object, format, options) {
         if ($isNothing(object)) {
-            throw new TypeError("Missing object to map.");
+            throw new TypeError("Missing object to map");
         }
         const mapTo = new MapTo(object, format, options);
         if ($composer.handle(mapTo)) {
@@ -420,7 +405,15 @@ export const MappingHandler = Handler.extend(Mapper, {
     },
     mapFrom(value, format, classOrInstance, options) {
         if ($isNothing(value)) {
-            throw new TypeError("Missing value to map from.");
+            throw new TypeError("Missing value to map from");
+        }
+        if (Array.isArray(classOrInstance)) {
+            const type = classOrInstance[0];
+            if (type && !$isFunction(type) && !Array.isArray(type)) {
+                throw new TypeError("Cannot infer array type");
+            }
+        } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
+            classOrInstance = [classOrInstance];
         }
         const mapFrom = new MapFrom(value, format, classOrInstance, options);
         if ($composer.handle(mapFrom)) {
@@ -605,15 +598,13 @@ export const JsonMapping = Handler.extend(
               raw     = $isPlainObject(object),
               all     = !$isPlainObject(spec);              
         if (raw || $isFunction(object.toJSON)) {
-            const json = raw ? raw : object.toJSON();
+            const json = raw ? object : object.toJSON();
             if (!all) {
                 const j = {};
                 for (let k in spec) j[k] = json[k];
-                mapTo.mapping = j;
-                return;
+                return j;
             }
-            mapTo.mapping = json;
-            return;
+            return json;
         }
         const descriptors = getPropertyDescriptors(object),
               mapper      = Mapper(composer),
@@ -621,9 +612,7 @@ export const JsonMapping = Handler.extend(
         Reflect.ownKeys(descriptors).forEach(key => {
             if (all || (key in spec)) {
                 let keyValue = object[key];
-                if (keyValue === undefined) {
-                    return;
-                }
+                if (keyValue === undefined) { return; }
                 const map     = mapping.get(object, key),
                       keySpec = all ? spec : spec[key];
                 if (!(all || keySpec) || (map && map.ignore)) {
@@ -660,10 +649,12 @@ export const JsonMapping = Handler.extend(
         return new RegExp(fragments[1], fragments[2] || "")
     },
     @mapFrom(Array)
-        mapArrayFromJson(mapFrom, composer) {
-        const array  = mapTo.value,
+    mapArrayFromJson(mapFrom, composer) {
+        const array  = mapFrom.value,
               mapper = Mapper(composer);
-        return array.map(elem => mapper.mapFrom(elem, mapFrom.format, mapFrom.options)); 
+        let   type   = mapFrom.classOrInstance;
+        type = Array.isArray(type) ? type[0] : undefined;
+        return array.map(elem => mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options)); 
     },        
     @mapFrom
     mapFromJson(mapFrom, composer) {
@@ -683,7 +674,7 @@ export const JsonMapping = Handler.extend(
               descriptors = getPropertyDescriptors(object);
         Reflect.ownKeys(descriptors).forEach(key => {
             const descriptor = descriptors[key];
-            if (_isSettableProperty(descriptor)) {
+            if (_canSetProperty(descriptor)) {
                 const map = mapping.get(object, key);
                 if (map && map.root) {
                     object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -699,7 +690,7 @@ export const JsonMapping = Handler.extend(
             const keyValue = value[key];
             if (keyValue === undefined) { continue; }
             if (descriptor) {
-                if (_isSettableProperty(descriptor)) {
+                if (_canSetProperty(descriptor)) {
                     object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                 }
             } else {
@@ -707,7 +698,7 @@ export const JsonMapping = Handler.extend(
                 let   found = false;
                 for (let k in descriptors) {
                     if (k.toLowerCase() === lkey) {
-                        if (_isSettableProperty(descriptors[k])) {                        
+                        if (_canSetProperty(descriptors[k])) {                        
                             object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                         }
                         found = true;
@@ -724,8 +715,11 @@ export const JsonMapping = Handler.extend(
 });
 
 function _canMapJson(value) {
-    return value === undefined
-        || !($isFunction(value) || $isSymbol(value));
+    return value !== undefined && !$isFunction(value) && !$isSymbol(value);
+}
+
+function _canSetProperty(descriptor) {
+    return !$isFunction(descriptor.value);
 }
 
 function _isJsonValue(value) {
@@ -735,24 +729,11 @@ function _isJsonValue(value) {
         case "string":
         case "boolean":        
             return true;
-        case "undefined":
-            return false;
     }
     return false;
 }
 
 function _mapFromJson(target, key, value, mapper, format, options) {
-    let type = design.get(target, key);
-    if ($isNothing(type)) { return value; };
-    if (Array.isArray(type)) {
-        type = type[0];
-        if (!Array.isArray(value)) {
-            value = [value];
-        }
-    }
+    const type = design.get(target, key);
     return mapper.mapFrom(value, format, type, options);
-}
-
-function _isSettableProperty(descriptor) {
-    return !$isFunction(descriptor.value);
 }
