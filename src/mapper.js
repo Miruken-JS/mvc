@@ -1,23 +1,15 @@
 import {
-    Base, Protocol, StrictProtocol, Variance,
+    Base, Protocol, StrictProtocol,typeOf,
     $isNothing, $isFunction, $classOf
 } from "miruken-core";
 
 import {
-    Handler, $define, $handle, $composer
+    Handler, $handle, $composer, $unhandled
 } from "miruken-callback";
 
-/**
- * Map to definition group.
- * @property {Function} $mapTo
- */
-export const $mapTo = $define(Variance.Contravariant);
-
-/**
- * Map from definition group.
- * @property {Function} $mapFrom
- */
-export const $mapFrom = $define(Variance.Covariant);
+import {
+    mapFrom, mapTo, $mapFrom, $mapTo
+} from "./decorators";
 
 /**
  * Protocol for mapping objects.
@@ -27,13 +19,13 @@ export const $mapFrom = $define(Variance.Covariant);
 export const Mapping = Protocol.extend({
     /**
      * Maps the `object` to a value in `format`.
-     * @method mapTo 
+     * @method mapFrom
      * @param   {Object}  object   -  object to map
      * @param   {Any}     format   -  format specifier
      * @param   {Object}  options  -  mapping options
      * @returns {Any}  mapped value.
      */
-    mapTo(object, format, options) {},
+    mapFrom(object, format, options) {},
     /**
      * Maps the formatted `value` in `format` to `classOrInstance`.
      * @method mapTo 
@@ -43,7 +35,7 @@ export const Mapping = Protocol.extend({
      * @param   {Object}  options  -  mapping options
      * @return  {Object}  unmapped instance. 
      */    
-    mapFrom(value, format, classOrInstance, options) {}
+    mapTo(value, format, classOrInstance, options) {}
 });
 
 /**
@@ -90,7 +82,7 @@ const MapCallback = Base.extend({
  * @param   {Object}  [options]  -  mapping options
  * @extends MapCallback
  */
-export const MapTo = MapCallback.extend({
+export const MapFrom = MapCallback.extend({
     constructor(object, format, options) {
         this.base(format, options);
         this.extend({
@@ -114,7 +106,7 @@ export const MapTo = MapCallback.extend({
  * @param   {Object}           [options]        -  mapping options
  * @extends MapCallback
  */
-export const MapFrom = MapCallback.extend({
+export const MapTo = MapCallback.extend({
     constructor(value, format, classOrInstance, options) {
         this.base(format, options);
         if ($isNothing(classOrInstance)) {
@@ -143,16 +135,16 @@ export const MapFrom = MapCallback.extend({
  * @extends Handler
  */        
 export const MappingHandler = Handler.extend(Mapper, {
-    mapTo(object, format, options) {
+    mapFrom(object, format, options) {
         if ($isNothing(object)) {
             throw new TypeError("Missing object to map");
         }
-        const mapTo = new MapTo(object, format, options);
-        if ($composer.handle(mapTo)) {
-            return mapTo.mapping;
+        const mapFrom = new MapFrom(object, format, options);
+        if ($composer.handle(mapFrom)) {
+            return mapFrom.mapping;
         }
     },
-    mapFrom(value, format, classOrInstance, options) {
+    mapTo(value, format, classOrInstance, options) {
         if ($isNothing(value)) {
             throw new TypeError("Missing value to map from");
         }
@@ -164,25 +156,55 @@ export const MappingHandler = Handler.extend(Mapper, {
         } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
             classOrInstance = [classOrInstance];
         }
-        const mapFrom = new MapFrom(value, format, classOrInstance, options);
-        if ($composer.handle(mapFrom)) {
-            return mapFrom.mapping;
+        const mapTo = new MapTo(value, format, classOrInstance, options);
+        if ($composer.handle(mapTo)) {
+            return mapTo.mapping;
         }
     }    
 });
 
-$handle(Handler.prototype, MapTo, function (mapTo, composer) {
-    const target = mapTo.object,
-          source = $classOf(target);
-    if ($isNothing(source)) { return false; }
-    return $mapTo.dispatch(this, mapTo, source, composer, false, m => mapTo.mapping = m);
+/**
+ * Abstract mapping.
+ * @class Abstract mapping
+ * @extends Handler
+ */        
+export const AbstractMapping = Handler.extend({
+    @mapFrom
+    mapFrom(mapFrom, composer) {
+        return $unhandled;
+    },
+
+    @mapTo
+    mapTo(mapTo, composer) {
+    },
+
+    canSetProperty(descriptor) {
+        return !$isFunction(descriptor.value);        
+    },
+    isPrimitiveValue(value) {
+        switch (typeOf(value)) {
+            case "null":
+            case "number":
+            case "string":
+            case "boolean":        
+            return true;
+        }
+        return false;        
+    }
 });
 
 $handle(Handler.prototype, MapFrom, function (mapFrom, composer) {
-    const classOrInstance = mapFrom.classOrInstance,
+    const target = mapFrom.object,
+          source = $classOf(target);
+    if ($isNothing(source)) { return false; }
+    return $mapFrom.dispatch(this, mapFrom, source, composer, false, m => mapFrom.mapping = m);
+});
+
+$handle(Handler.prototype, MapTo, function (mapTo, composer) {
+    const classOrInstance = mapTo.classOrInstance,
           source          = $isFunction(classOrInstance)
                           ? classOrInstance
                           : $classOf(classOrInstance);
     if ($isNothing(source)) { return false; }
-    return $mapFrom.dispatch(this, mapFrom, source, composer, false, m => mapFrom.mapping = m);
+    return $mapTo.dispatch(this, mapTo, source, composer, false, m => mapTo.mapping = m);
 });

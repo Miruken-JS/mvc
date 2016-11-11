@@ -3,14 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.JsonMapping = exports.JsonContentType = exports.JsonFormat = exports.format = exports.ModalProviding = exports.ModalPolicy = exports.Controller = exports.MappingHandler = exports.MapFrom = exports.MapTo = exports.Mapper = exports.Mapping = exports.$mapFrom = exports.$mapTo = exports.mapping = exports.MasterDetailAware = exports.MasterDetail = exports.ButtonClicked = exports.PresentationPolicy = exports.ViewRegionAware = exports.ViewRegion = undefined;
+exports.JsonMapping = exports.JsonContentType = exports.JsonFormat = exports.AbstractMapping = exports.MappingHandler = exports.MapTo = exports.MapFrom = exports.Mapper = exports.Mapping = exports.ModalProviding = exports.ModalPolicy = exports.Controller = exports.format = exports.$mapTo = exports.$mapFrom = exports.mapping = exports.MasterDetailAware = exports.MasterDetail = exports.ButtonClicked = exports.PresentationPolicy = exports.ViewRegionAware = exports.ViewRegion = undefined;
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc, _value, _obj;
+var _desc, _value, _obj, _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc2, _value2, _obj2;
 
 exports.root = root;
 exports.ignore = ignore;
-exports.mapTo = mapTo;
 exports.mapFrom = mapFrom;
+exports.mapTo = mapTo;
 
 var _mirukenCore = require('miruken-core');
 
@@ -137,110 +137,56 @@ function _getOrCreateMapping(target, key) {
 }
 
 exports.default = mapping;
-var $mapTo = exports.$mapTo = (0, _mirukenCallback.$define)(_mirukenCore.Variance.Contravariant);
 
-var $mapFrom = exports.$mapFrom = (0, _mirukenCallback.$define)(_mirukenCore.Variance.Covariant);
 
-var Mapping = exports.Mapping = _mirukenCore.Protocol.extend({
-    mapTo: function mapTo(object, format, options) {},
-    mapFrom: function mapFrom(value, format, classOrInstance, options) {}
-});
+var formatMetadataKey = Symbol();
 
-var Mapper = exports.Mapper = _mirukenCore.StrictProtocol.extend(Mapping);
+var $mapFrom = exports.$mapFrom = (0, _mirukenCallback.$define)(_mirukenCore.Variance.Contravariant);
 
-var MapCallback = _mirukenCore.Base.extend({
-    constructor: function constructor(format, options) {
-        this.extend({
-            get format() {
-                return format;
-            },
+var $mapTo = exports.$mapTo = (0, _mirukenCallback.$define)(_mirukenCore.Variance.Covariant);
 
-            get options() {
-                return options;
-            }
-        });
+function mapFrom() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
     }
-});
 
-var MapTo = exports.MapTo = MapCallback.extend({
-    constructor: function constructor(object, format, options) {
-        this.base(format, options);
-        this.extend({
-            get object() {
-                return object;
-            }
-        });
+    return (0, _mirukenCore.decorate)((0, _mirukenCallback.addDefinition)("mapFrom", $mapFrom, false, _filterFormat), args);
+}
+
+function mapTo() {
+    for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
     }
-});
 
-var MapFrom = exports.MapFrom = MapCallback.extend({
-    constructor: function constructor(value, format, classOrInstance, options) {
-        this.base(format, options);
-        if ((0, _mirukenCore.$isNothing)(classOrInstance)) {
-            classOrInstance = (0, _mirukenCore.$classOf)(value);
-        }
-        this.extend({
-            get value() {
-                return value;
-            },
+    return (0, _mirukenCore.decorate)((0, _mirukenCallback.addDefinition)("mapTo", $mapTo, false, _filterFormat), args);
+}
 
-            get classOrInstance() {
-                return classOrInstance;
-            }
-        });
+var format = exports.format = _mirukenCore.Metadata.decorator(formatMetadataKey, function (target, key, descriptor, formats) {
+    var property = (0, _mirukenCore.isDescriptor)(descriptor);
+    formats = (0, _mirukenCore.$flatten)(property ? formats : key);
+    if (formats.length === 0) {
+        return;
     }
-});
-
-var MappingHandler = exports.MappingHandler = _mirukenCallback.Handler.extend(Mapper, {
-    mapTo: function mapTo(object, format, options) {
-        if ((0, _mirukenCore.$isNothing)(object)) {
-            throw new TypeError("Missing object to map");
-        }
-        var mapTo = new MapTo(object, format, options);
-        if (_mirukenCallback.$composer.handle(mapTo)) {
-            return mapTo.mapping;
-        }
-    },
-    mapFrom: function mapFrom(value, format, classOrInstance, options) {
-        if ((0, _mirukenCore.$isNothing)(value)) {
-            throw new TypeError("Missing value to map from");
-        }
-        if (Array.isArray(classOrInstance)) {
-            var type = classOrInstance[0];
-            if (type && !(0, _mirukenCore.$isFunction)(type) && !Array.isArray(type)) {
-                throw new TypeError("Cannot infer array type");
-            }
-        } else if (Array.isArray(value) && (0, _mirukenCore.$isFunction)(classOrInstance)) {
-            classOrInstance = [classOrInstance];
-        }
-        var mapFrom = new MapFrom(value, format, classOrInstance, options);
-        if (_mirukenCallback.$composer.handle(mapFrom)) {
-            return mapFrom.mapping;
-        }
-    }
-});
-
-(0, _mirukenCallback.$handle)(_mirukenCallback.Handler.prototype, MapTo, function (mapTo, composer) {
-    var target = mapTo.object,
-        source = (0, _mirukenCore.$classOf)(target);
-    if ((0, _mirukenCore.$isNothing)(source)) {
-        return false;
-    }
-    return $mapTo.dispatch(this, mapTo, source, composer, false, function (m) {
-        return mapTo.mapping = m;
+    var metadata = property ? _mirukenCore.Metadata.getOrCreateOwn(formatMetadataKey, target, key, function () {
+        return new Set();
+    }) : _mirukenCore.Metadata.getOrCreateOwn(formatMetadataKey, target.prototype, function () {
+        return new Set();
+    });
+    formats.forEach(function (format) {
+        return metadata.add(format);
     });
 });
 
-(0, _mirukenCallback.$handle)(_mirukenCallback.Handler.prototype, MapFrom, function (mapFrom, composer) {
-    var classOrInstance = mapFrom.classOrInstance,
-        source = (0, _mirukenCore.$isFunction)(classOrInstance) ? classOrInstance : (0, _mirukenCore.$classOf)(classOrInstance);
-    if ((0, _mirukenCore.$isNothing)(source)) {
-        return false;
+function _filterFormat(key, mapCallback) {
+    var prototype = Object.getPrototypeOf(this);
+    var formats = format.get(prototype, key);
+    if (!formats || formats.size === 0) {
+        formats = format.get(prototype);
     }
-    return $mapFrom.dispatch(this, mapFrom, source, composer, false, function (m) {
-        return mapFrom.mapping = m;
+    return !formats || formats.size === 0 || [].concat(_toConsumableArray(formats)).some(function (f) {
+        return (0, _mirukenCore.$equals)(mapCallback.format, f);
     });
-});
+}
 
 var Controller = exports.Controller = _mirukenCallback.Handler.extend(_mirukenContext.contextual, _mirukenValidate.Validating, {
     validate: function validate(target, scope) {
@@ -280,78 +226,158 @@ _mirukenCallback.Handler.implement({
     }
 });
 
-var formatMetadataKey = Symbol();
+var Mapping = exports.Mapping = _mirukenCore.Protocol.extend({
+    mapFrom: function mapFrom(object, format, options) {},
+    mapTo: function mapTo(value, format, classOrInstance, options) {}
+});
 
-function mapTo() {
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
+var Mapper = exports.Mapper = _mirukenCore.StrictProtocol.extend(Mapping);
+
+var MapCallback = _mirukenCore.Base.extend({
+    constructor: function constructor(format, options) {
+        this.extend({
+            get format() {
+                return format;
+            },
+
+            get options() {
+                return options;
+            }
+        });
     }
+});
 
-    return (0, _mirukenCore.decorate)((0, _mirukenCallback.addDefinition)("mapTo", $mapTo, false, _filterFormat), args);
-}
-
-function mapFrom() {
-    for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
+var MapFrom = exports.MapFrom = MapCallback.extend({
+    constructor: function constructor(object, format, options) {
+        this.base(format, options);
+        this.extend({
+            get object() {
+                return object;
+            }
+        });
     }
+});
 
-    return (0, _mirukenCore.decorate)((0, _mirukenCallback.addDefinition)("mapFrom", $mapFrom, false, _filterFormat), args);
-}
+var MapTo = exports.MapTo = MapCallback.extend({
+    constructor: function constructor(value, format, classOrInstance, options) {
+        this.base(format, options);
+        if ((0, _mirukenCore.$isNothing)(classOrInstance)) {
+            classOrInstance = (0, _mirukenCore.$classOf)(value);
+        }
+        this.extend({
+            get value() {
+                return value;
+            },
 
-var format = exports.format = _mirukenCore.Metadata.decorator(formatMetadataKey, function (target, key, descriptor, formats) {
-    var property = (0, _mirukenCore.isDescriptor)(descriptor);
-    formats = (0, _mirukenCore.$flatten)(property ? formats : key);
-    if (formats.length === 0) {
-        return;
+            get classOrInstance() {
+                return classOrInstance;
+            }
+        });
     }
-    var metadata = property ? _mirukenCore.Metadata.getOrCreateOwn(formatMetadataKey, target, key, function () {
-        return new Set();
-    }) : _mirukenCore.Metadata.getOrCreateOwn(formatMetadataKey, target.prototype, function () {
-        return new Set();
-    });
-    formats.forEach(function (format) {
-        return metadata.add(format);
+});
+
+var MappingHandler = exports.MappingHandler = _mirukenCallback.Handler.extend(Mapper, {
+    mapFrom: function mapFrom(object, format, options) {
+        if ((0, _mirukenCore.$isNothing)(object)) {
+            throw new TypeError("Missing object to map");
+        }
+        var mapFrom = new MapFrom(object, format, options);
+        if (_mirukenCallback.$composer.handle(mapFrom)) {
+            return mapFrom.mapping;
+        }
+    },
+    mapTo: function mapTo(value, format, classOrInstance, options) {
+        if ((0, _mirukenCore.$isNothing)(value)) {
+            throw new TypeError("Missing value to map from");
+        }
+        if (Array.isArray(classOrInstance)) {
+            var type = classOrInstance[0];
+            if (type && !(0, _mirukenCore.$isFunction)(type) && !Array.isArray(type)) {
+                throw new TypeError("Cannot infer array type");
+            }
+        } else if (Array.isArray(value) && (0, _mirukenCore.$isFunction)(classOrInstance)) {
+            classOrInstance = [classOrInstance];
+        }
+        var mapTo = new MapTo(value, format, classOrInstance, options);
+        if (_mirukenCallback.$composer.handle(mapTo)) {
+            return mapTo.mapping;
+        }
+    }
+});
+
+var AbstractMapping = exports.AbstractMapping = _mirukenCallback.Handler.extend((_obj = {
+    mapFrom: function mapFrom(_mapFrom, composer) {
+        return _mirukenCallback.$unhandled;
+    },
+    mapTo: function mapTo(_mapTo, composer) {},
+    canSetProperty: function canSetProperty(descriptor) {
+        return !(0, _mirukenCore.$isFunction)(descriptor.value);
+    },
+    isPrimitiveValue: function isPrimitiveValue(value) {
+        switch ((0, _mirukenCore.typeOf)(value)) {
+            case "null":
+            case "number":
+            case "string":
+            case "boolean":
+                return true;
+        }
+        return false;
+    }
+}, (_applyDecoratedDescriptor(_obj, 'mapFrom', [mapFrom], Object.getOwnPropertyDescriptor(_obj, 'mapFrom'), _obj), _applyDecoratedDescriptor(_obj, 'mapTo', [mapTo], Object.getOwnPropertyDescriptor(_obj, 'mapTo'), _obj)), _obj));
+
+(0, _mirukenCallback.$handle)(_mirukenCallback.Handler.prototype, MapFrom, function (mapFrom, composer) {
+    var target = mapFrom.object,
+        source = (0, _mirukenCore.$classOf)(target);
+    if ((0, _mirukenCore.$isNothing)(source)) {
+        return false;
+    }
+    return $mapFrom.dispatch(this, mapFrom, source, composer, false, function (m) {
+        return mapFrom.mapping = m;
     });
 });
 
-function _filterFormat(key, mapCallback) {
-    var prototype = Object.getPrototypeOf(this);
-    var formats = format.get(prototype, key);
-    if (!formats || formats.size === 0) {
-        formats = format.get(prototype);
+(0, _mirukenCallback.$handle)(_mirukenCallback.Handler.prototype, MapTo, function (mapTo, composer) {
+    var classOrInstance = mapTo.classOrInstance,
+        source = (0, _mirukenCore.$isFunction)(classOrInstance) ? classOrInstance : (0, _mirukenCore.$classOf)(classOrInstance);
+    if ((0, _mirukenCore.$isNothing)(source)) {
+        return false;
     }
-    return !formats || formats.size === 0 || [].concat(_toConsumableArray(formats)).some(function (f) {
-        return (0, _mirukenCore.$equals)(mapCallback.format, f);
+    return $mapTo.dispatch(this, mapTo, source, composer, false, function (m) {
+        return mapTo.mapping = m;
     });
-}
+});
 
-var JsonFormat = exports.JsonFormat = "json",
+var JsonFormat = exports.JsonFormat = Symbol(),
     JsonContentType = exports.JsonContentType = "application/json";
 
-var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(JsonFormat, JsonContentType), (_dec = mapTo(Date), _dec2 = mapTo(RegExp), _dec3 = mapTo(Array), _dec4 = mapFrom(Date), _dec5 = mapFrom(RegExp), _dec6 = mapFrom(Array), (_obj = {
-    mapDateToJson: function mapDateToJson(mapTo) {
-        return mapTo.object.toJSON();
+var JsonMapping = exports.JsonMapping = AbstractMapping.extend(format(JsonFormat, JsonContentType), (_dec = mapFrom(Date), _dec2 = mapFrom(RegExp), _dec3 = mapFrom(Array), _dec4 = mapTo(Date), _dec5 = mapTo(RegExp), _dec6 = mapTo(Array), (_obj2 = {
+    mapFromDate: function mapFromDate(mapFrom) {
+        return mapFrom.object.toJSON();
     },
-    mapRegExpToJson: function mapRegExpToJson(mapTo) {
-        return mapTo.object.toString();
+    mapFromRegExp: function mapFromRegExp(mapFrom) {
+        return mapFrom.object.toString();
     },
-    mapArrayToJson: function mapArrayToJson(mapTo, composer) {
-        var array = mapTo.object,
+    mapFromArray: function mapFromArray(mapFrom, composer) {
+        var array = mapFrom.object,
+            format = mapFrom.format,
+            options = mapFrom.options,
             mapper = Mapper(composer);
         return array.map(function (elem) {
-            return mapper.mapTo(elem, mapTo.format, mapTo.options);
+            return mapper.mapFrom(elem, format, options);
         });
     },
-    mapToJson: function mapToJson(mapTo, composer) {
-        var object = mapTo.object;
+    mapFrom: function mapFrom(_mapFrom2, composer) {
+        var _this = this;
+
+        var object = _mapFrom2.object;
         if (!_canMapJson(object)) {
             return;
         }
-        if (_isJsonValue(object)) {
+        if (this.isPrimitiveValue(object)) {
             return object && object.valueOf();
         }
-        var format = mapTo.format,
-            options = mapTo.options,
+        var format = _mapFrom2.format,
+            options = _mapFrom2.options,
             spec = options && options.spec,
             raw = (0, _mirukenCore.$isPlainObject)(object),
             all = !(0, _mirukenCore.$isPlainObject)(spec);
@@ -385,11 +411,11 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
                 if (!_canMapJson(keyValue)) {
                     return;
                 }
-                if (_isJsonValue(keyValue)) {
+                if (_this.isPrimitiveValue(keyValue)) {
                     json[key] = keyValue && keyValue.valueOf();
                     return;
                 }
-                var keyJson = mapper.mapTo(keyValue, format, keyOptions);
+                var keyJson = mapper.mapFrom(keyValue, format, keyOptions);
                 if (map && map.root) {
                     Object.assign(json, keyJson);
                 } else {
@@ -399,38 +425,42 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
         });
         return json;
     },
-    mapDateFromJson: function mapDateFromJson(mapFrom) {
-        var date = mapFrom.value;
+    mapToDate: function mapToDate(mapTo) {
+        var date = mapTo.value;
         return (0, _mirukenCore.instanceOf)(date, Date) ? date : Date.parse(date);
     },
-    mapRegExpFromJson: function mapRegExpFromJson(mapFrom) {
-        var pattern = mapFrom.value,
+    mapToRegExp: function mapToRegExp(mapTo) {
+        var pattern = mapTo.value,
             fragments = pattern.match(/\/(.*?)\/([gimy])?$/);
         return new RegExp(fragments[1], fragments[2] || "");
     },
-    mapArrayFromJson: function mapArrayFromJson(mapFrom, composer) {
-        var array = mapFrom.value,
+    mapToArray: function mapToArray(mapTo, composer) {
+        var array = mapTo.value,
+            format = mapTo.format,
+            options = mapTo.options,
             mapper = Mapper(composer);
-        var type = mapFrom.classOrInstance;
+        var type = mapTo.classOrInstance;
         type = Array.isArray(type) ? type[0] : undefined;
         return array.map(function (elem) {
-            return mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options);
+            return mapper.mapTo(elem, format, type, options);
         });
     },
-    mapFromJson: function mapFromJson(mapFrom, composer) {
-        var value = mapFrom.value;
+    mapTo: function mapTo(_mapTo2, composer) {
+        var _this2 = this;
+
+        var value = _mapTo2.value;
         if (!_canMapJson(value)) {
             return;
         }
-        if (_isJsonValue(value)) {
+        if (this.isPrimitiveValue(value)) {
             return value;
         }
-        var classOrInstance = mapFrom.classOrInstance;
+        var classOrInstance = _mapTo2.classOrInstance;
         if ((0, _mirukenCore.$isNothing)(classOrInstance)) {
             return;
         }
-        var format = mapFrom.format,
-            options = mapFrom.options,
+        var format = _mapTo2.format,
+            options = _mapTo2.options,
             object = (0, _mirukenCore.$isFunction)(classOrInstance) ? Reflect.construct(classOrInstance, _mirukenCore.emptyArray) : classOrInstance;
         var dynamic = options && options.dynamic,
             ignoreCase = options && options.ignoreCase,
@@ -438,7 +468,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
             descriptors = (0, _mirukenCore.getPropertyDescriptors)(object);
         Reflect.ownKeys(descriptors).forEach(function (key) {
             var descriptor = descriptors[key];
-            if (_canSetProperty(descriptor)) {
+            if (_this2.canSetProperty(descriptor)) {
                 var map = mapping.get(object, key);
                 if (map && map.root) {
                     object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -456,7 +486,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
                 continue;
             }
             if (descriptor) {
-                if (_canSetProperty(descriptor)) {
+                if (this.canSetProperty(descriptor)) {
                     object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                 }
             } else {
@@ -464,7 +494,7 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
                 var found = false;
                 for (var k in descriptors) {
                     if (k.toLowerCase() === lkey) {
-                        if (_canSetProperty(descriptors[k])) {
+                        if (this.canSetProperty(descriptors[k])) {
                             object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                         }
                         found = true;
@@ -478,28 +508,13 @@ var JsonMapping = exports.JsonMapping = _mirukenCallback.Handler.extend(format(J
         }
         return object;
     }
-}, (_applyDecoratedDescriptor(_obj, 'mapDateToJson', [_dec], Object.getOwnPropertyDescriptor(_obj, 'mapDateToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpToJson', [_dec2], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayToJson', [_dec3], Object.getOwnPropertyDescriptor(_obj, 'mapArrayToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapToJson', [mapTo], Object.getOwnPropertyDescriptor(_obj, 'mapToJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapDateFromJson', [_dec4], Object.getOwnPropertyDescriptor(_obj, 'mapDateFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapRegExpFromJson', [_dec5], Object.getOwnPropertyDescriptor(_obj, 'mapRegExpFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapArrayFromJson', [_dec6], Object.getOwnPropertyDescriptor(_obj, 'mapArrayFromJson'), _obj), _applyDecoratedDescriptor(_obj, 'mapFromJson', [mapFrom], Object.getOwnPropertyDescriptor(_obj, 'mapFromJson'), _obj)), _obj)));
+}, (_applyDecoratedDescriptor(_obj2, 'mapFromDate', [_dec], Object.getOwnPropertyDescriptor(_obj2, 'mapFromDate'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapFromRegExp', [_dec2], Object.getOwnPropertyDescriptor(_obj2, 'mapFromRegExp'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapFromArray', [_dec3], Object.getOwnPropertyDescriptor(_obj2, 'mapFromArray'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapToDate', [_dec4], Object.getOwnPropertyDescriptor(_obj2, 'mapToDate'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapToRegExp', [_dec5], Object.getOwnPropertyDescriptor(_obj2, 'mapToRegExp'), _obj2), _applyDecoratedDescriptor(_obj2, 'mapToArray', [_dec6], Object.getOwnPropertyDescriptor(_obj2, 'mapToArray'), _obj2)), _obj2)));
 
 function _canMapJson(value) {
     return value !== undefined && !(0, _mirukenCore.$isFunction)(value) && !(0, _mirukenCore.$isSymbol)(value);
 }
 
-function _canSetProperty(descriptor) {
-    return !(0, _mirukenCore.$isFunction)(descriptor.value);
-}
-
-function _isJsonValue(value) {
-    switch ((0, _mirukenCore.typeOf)(value)) {
-        case "null":
-        case "number":
-        case "string":
-        case "boolean":
-            return true;
-    }
-    return false;
-}
-
 function _mapFromJson(target, key, value, mapper, format, options) {
     var type = _mirukenCore.design.get(target, key);
-    return mapper.mapFrom(value, format, type, options);
+    return mapper.mapTo(value, format, type, options);
 }

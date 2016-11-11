@@ -1,19 +1,18 @@
 import {
-    design, typeOf, instanceOf, $isNothing,
+    design, instanceOf, $isNothing,
     $isFunction, $isSymbol, $isPlainObject,
     getPropertyDescriptors, emptyArray
 } from "miruken-core";
 
-import { Handler } from "miruken-callback";
 import { mapping } from "./mapping";
-import { Mapper } from "./mapper";
-import { mapTo, mapFrom, format } from "./decorators";
+import { Mapper, AbstractMapping } from "./mapper";
+import { mapFrom, mapTo, format } from "./decorators";
 
 /**
  * Javascript Object Notation
  * @property {Any} JsonFormat
  */
-export const JsonFormat      = "json",
+export const JsonFormat      = Symbol(),
              JsonContentType = "application/json";
 
 /**
@@ -22,31 +21,32 @@ export const JsonFormat      = "json",
  * @extends Handler
  * @uses Mapper
  */
-export const JsonMapping = Handler.extend(
+export const JsonMapping = AbstractMapping.extend(
     format(JsonFormat, JsonContentType), {
-    @mapTo(Date)
-    mapDateToJson(mapTo) {
-        return mapTo.object.toJSON();
+    @mapFrom(Date)
+    mapFromDate(mapFrom) {
+        return mapFrom.object.toJSON();
     },
-    @mapTo(RegExp)
-    mapRegExpToJson(mapTo) {
-        return mapTo.object.toString();
+    @mapFrom(RegExp)
+    mapFromRegExp(mapFrom) {
+        return mapFrom.object.toString();
     },
-    @mapTo(Array)
-    mapArrayToJson(mapTo, composer) {
-        const array  = mapTo.object,
-              mapper = Mapper(composer);
-        return array.map(elem => mapper.mapTo(elem, mapTo.format, mapTo.options)); 
+    @mapFrom(Array)
+    mapFromArray(mapFrom, composer) {
+        const array   = mapFrom.object,
+              format  = mapFrom.format,
+              options = mapFrom.options,
+              mapper  = Mapper(composer);
+        return array.map(elem => mapper.mapFrom(elem, format, options)); 
     },
-    @mapTo
-    mapToJson(mapTo, composer) {
-        const object = mapTo.object;
+    mapFrom(mapFrom, composer) {
+        const object = mapFrom.object;
         if (!_canMapJson(object)) { return; }
-        if (_isJsonValue(object)) {
+        if (this.isPrimitiveValue(object)) {
             return object && object.valueOf();
         }
-        const format  = mapTo.format,
-              options = mapTo.options,
+        const format  = mapFrom.format,
+              options = mapFrom.options,
               spec    = options && options.spec,
               raw     = $isPlainObject(object),
               all     = !$isPlainObject(spec);              
@@ -75,11 +75,11 @@ export const JsonMapping = Handler.extend(
                     spec: { value: keySpec }
                 }) : options;
                 if (!_canMapJson(keyValue)) { return; }
-                if (_isJsonValue(keyValue)) {
+                if (this.isPrimitiveValue(keyValue)) {
                     json[key] = keyValue && keyValue.valueOf();
                     return;
                 }
-                const keyJson = mapper.mapTo(keyValue, format, keyOptions);
+                const keyJson = mapper.mapFrom(keyValue, format, keyOptions);
                 if (map && map.root) {
                     Object.assign(json, keyJson);
                 } else {                 
@@ -90,34 +90,35 @@ export const JsonMapping = Handler.extend(
         return json;
     },
    
-    @mapFrom(Date)
-    mapDateFromJson(mapFrom) {
-        const date = mapFrom.value;
+    @mapTo(Date)
+    mapToDate(mapTo) {
+        const date = mapTo.value;
         return instanceOf(date, Date) ? date : Date.parse(date);
     },
-    @mapFrom(RegExp)
-    mapRegExpFromJson(mapFrom) {
-        const pattern   = mapFrom.value,
+    @mapTo(RegExp)
+    mapToRegExp(mapTo) {
+        const pattern   = mapTo.value,
               fragments = pattern.match(/\/(.*?)\/([gimy])?$/);              
         return new RegExp(fragments[1], fragments[2] || "")
     },
-    @mapFrom(Array)
-    mapArrayFromJson(mapFrom, composer) {
-        const array  = mapFrom.value,
-              mapper = Mapper(composer);
-        let   type   = mapFrom.classOrInstance;
+    @mapTo(Array)
+    mapToArray(mapTo, composer) {
+        const array   = mapTo.value,
+              format  = mapTo.format,
+              options = mapTo.options,
+              mapper  = Mapper(composer);
+        let type = mapTo.classOrInstance;
         type = Array.isArray(type) ? type[0] : undefined;
-        return array.map(elem => mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options)); 
+        return array.map(elem => mapper.mapTo(elem, format, type, options)); 
     },        
-    @mapFrom
-    mapFromJson(mapFrom, composer) {
-        const value = mapFrom.value;
+    mapTo(mapTo, composer) {
+        const value = mapTo.value;
         if (!_canMapJson(value)) { return; }
-        if (_isJsonValue(value)) { return value; }
-        const classOrInstance = mapFrom.classOrInstance;
+        if (this.isPrimitiveValue(value)) { return value; }
+        const classOrInstance = mapTo.classOrInstance;
         if ($isNothing(classOrInstance)) { return; }
-        const format  = mapFrom.format,
-              options = mapFrom.options,
+        const format  = mapTo.format,
+              options = mapTo.options,
               object  = $isFunction(classOrInstance)
                       ? Reflect.construct(classOrInstance, emptyArray)
                       : classOrInstance;
@@ -127,7 +128,7 @@ export const JsonMapping = Handler.extend(
               descriptors = getPropertyDescriptors(object);
         Reflect.ownKeys(descriptors).forEach(key => {
             const descriptor = descriptors[key];
-            if (_canSetProperty(descriptor)) {
+            if (this.canSetProperty(descriptor)) {
                 const map = mapping.get(object, key);
                 if (map && map.root) {
                     object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -143,7 +144,7 @@ export const JsonMapping = Handler.extend(
             const keyValue = value[key];
             if (keyValue === undefined) { continue; }
             if (descriptor) {
-                if (_canSetProperty(descriptor)) {
+                if (this.canSetProperty(descriptor)) {
                     object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                 }
             } else {
@@ -151,7 +152,7 @@ export const JsonMapping = Handler.extend(
                 let   found = false;
                 for (let k in descriptors) {
                     if (k.toLowerCase() === lkey) {
-                        if (_canSetProperty(descriptors[k])) {                        
+                        if (this.canSetProperty(descriptors[k])) {                        
                             object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                         }
                         found = true;
@@ -171,22 +172,7 @@ function _canMapJson(value) {
     return value !== undefined && !$isFunction(value) && !$isSymbol(value);
 }
 
-function _canSetProperty(descriptor) {
-    return !$isFunction(descriptor.value);
-}
-
-function _isJsonValue(value) {
-    switch (typeOf(value)) {
-        case "null":
-        case "number":
-        case "string":
-        case "boolean":        
-            return true;
-    }
-    return false;
-}
-
 function _mapFromJson(target, key, value, mapper, format, options) {
     const type = design.get(target, key);
-    return mapper.mapFrom(value, format, type, options);
+    return mapper.mapTo(value, format, type, options);
 }

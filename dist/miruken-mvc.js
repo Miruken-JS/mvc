@@ -1,5 +1,5 @@
-import {Base,Protocol,StrictProtocol,Policy,Metadata,$isFunction,$isPlainObject,isDescriptor,Variance,$isNothing,$classOf,decorate,$flatten,$equals,design,typeOf,instanceOf,$isSymbol,getPropertyDescriptors,emptyArray} from 'miruken-core';
-import {Handler,handle,$define,$handle,$composer,addDefinition} from 'miruken-callback';
+import {Base,Protocol,StrictProtocol,Policy,Metadata,$isFunction,$isPlainObject,isDescriptor,Variance,decorate,$flatten,$equals,typeOf,$isNothing,$classOf,design,instanceOf,$isSymbol,getPropertyDescriptors,emptyArray} from 'miruken-core';
+import {Handler,handle,$define,addDefinition,$handle,$composer,$unhandled} from 'miruken-callback';
 import {Validator,Validating} from 'miruken-validate';
 import {contextual} from 'miruken-context';
 
@@ -258,185 +258,63 @@ function _getOrCreateMapping(target, key) {
 
 export default mapping;
 
-/**
- * Map to definition group.
- * @property {Function} $mapTo
- */
-export const $mapTo = $define(Variance.Contravariant);
+const formatMetadataKey = Symbol();
 
 /**
- * Map from definition group.
+ * Definition for mapping a value to a format.
  * @property {Function} $mapFrom
  */
-export const $mapFrom = $define(Variance.Covariant);
+export const $mapFrom = $define(Variance.Contravariant);
 
 /**
- * Protocol for mapping objects.
- * @class Mapping
- * @extends Protocol
- */        
-export const Mapping = Protocol.extend({
-    /**
-     * Maps the `object` to a value in `format`.
-     * @method mapTo 
-     * @param   {Object}  object   -  object to map
-     * @param   {Any}     format   -  format specifier
-     * @param   {Object}  options  -  mapping options
-     * @returns {Any}  mapped value.
-     */
-    mapTo(object, format, options) {},
-    /**
-     * Maps the formatted `value` in `format` to `classOrInstance`.
-     * @method mapTo 
-     * @param   {Any}  value       -  formatted value
-     * @param   {Any}  format      -  format specifier
-     * @param   {Function|Object}  -  instance or class to unmap
-     * @param   {Object}  options  -  mapping options
-     * @return  {Object}  unmapped instance. 
-     */    
-    mapFrom(value, format, classOrInstance, options) {}
-});
-
-/**
- * Protocol for mapping objects strictly.
- * @class Mapper
- * @extends StrictProtocol
- * @uses Mapping
- */        
-export const Mapper = StrictProtocol.extend(Mapping);
-
-/**
- * Base callback for mapping.
- * @class MapCallback
- * @constructor
- * @param   {Any}     format   -  format specifier
- * @param   {Object}  options  -  mapping options
- * @extends Base
+ * Definition for mapping from a formatted value.
+ * @property {Function} $mapTo
  */
-const MapCallback = Base.extend({
-    constructor(format, options) {
-        this.extend({
-            /**
-             * Gets the format to map.
-             * @property {Any} format
-             * @readOnly
-             */                                                
-            get format() { return format; },
-            /**
-             * Gets the mapping options.
-             * @property {Object} options
-             * @readOnly
-             */                                                
-            get options() { return options; }            
-        });
-    }
-});
+export const $mapTo = $define(Variance.Covariant);
 
 /**
- * Callback to map an `object` to `format`.
- * @class MapTo
- * @constructor
- * @param   {Object}  object     -  object to map
- * @param   {Any}     format     -  format specifier
- * @param   {Object}  [options]  -  mapping options
- * @extends MapCallback
+ * Decorator for mapping a value to a format.
+ * @method mapFrom
+ * @param {Array}  ...types  -  types to map from
  */
-export const MapTo = MapCallback.extend({
-    constructor(object, format, options) {
-        this.base(format, options);
-        this.extend({
-            /**
-             * Gets the target object to map.
-             * @property {Object} object
-             * @readOnly
-             */                                
-            get object() { return object; }
-        });
-    }
-});
+export function mapFrom(...args) {
+    return decorate(addDefinition("mapFrom", $mapFrom, false, _filterFormat), args);
+}
 
 /**
- * Callback to map a formatted `value` into an object.
- * @class MapFrom
- * @constructor
- * @param   {Any}              value            -  formatted value
- * @param   {Any}              format           -  format specifier
- * @param   {Function|Object}  classOrInstance  -  instance or class to unmap
- * @param   {Object}           [options]        -  mapping options
- * @extends MapCallback
+ * Decorator for mapping from a formatted value.
+ * @method mapTo
+ * @param {Array}  ...types  -  types to map
  */
-export const MapFrom = MapCallback.extend({
-    constructor(value, format, classOrInstance, options) {
-        this.base(format, options);
-        if ($isNothing(classOrInstance)) {
-            classOrInstance = $classOf(value);
-        }
-        this.extend({
-            /**
-             * Gets the formatted value.
-             * @property {Any} value
-             * @readOnly
-             */                                
-            get value() { return value; },
-            /**
-             * Gets the class or instance to unmap into.
-             * @property {Function|Object} classOrInstance
-             * @readOnly
-             */                                                
-            get classOrInstance() { return classOrInstance; }
-        });
-    }
-});
+export function mapTo(...args) {
+    return decorate(addDefinition("mapTo", $mapTo, false, _filterFormat), args);
+}
 
 /**
- * Handler for performing object mappings.
- * @class MappingHandler
- * @extends Handler
- */        
-export const MappingHandler = Handler.extend(Mapper, {
-    mapTo(object, format, options) {
-        if ($isNothing(object)) {
-            throw new TypeError("Missing object to map");
-        }
-        const mapTo = new MapTo(object, format, options);
-        if ($composer.handle(mapTo)) {
-            return mapTo.mapping;
-        }
-    },
-    mapFrom(value, format, classOrInstance, options) {
-        if ($isNothing(value)) {
-            throw new TypeError("Missing value to map from");
-        }
-        if (Array.isArray(classOrInstance)) {
-            const type = classOrInstance[0];
-            if (type && !$isFunction(type) && !Array.isArray(type)) {
-                throw new TypeError("Cannot infer array type");
-            }
-        } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
-            classOrInstance = [classOrInstance];
-        }
-        const mapFrom = new MapFrom(value, format, classOrInstance, options);
-        if ($composer.handle(mapFrom)) {
-            return mapFrom.mapping;
-        }
-    }    
-});
+ * Mapping formats.
+ * @method format
+ * @param {Array}  ...formats  -  mapping formats 
+ */
+export const format = Metadata.decorator(formatMetadataKey,
+    (target, key, descriptor, formats) => {
+        const property = isDescriptor(descriptor);
+        formats = $flatten(property ? formats : key);
+        if (formats.length === 0) { return; }
+        const metadata = property
+            ? Metadata.getOrCreateOwn(formatMetadataKey, target, key, () => new Set())
+            : Metadata.getOrCreateOwn(formatMetadataKey, target.prototype, () => new Set());
+        formats.forEach(format => metadata.add(format));
+    });
 
-$handle(Handler.prototype, MapTo, function (mapTo, composer) {
-    const target = mapTo.object,
-          source = $classOf(target);
-    if ($isNothing(source)) { return false; }
-    return $mapTo.dispatch(this, mapTo, source, composer, false, m => mapTo.mapping = m);
-});
-
-$handle(Handler.prototype, MapFrom, function (mapFrom, composer) {
-    const classOrInstance = mapFrom.classOrInstance,
-          source          = $isFunction(classOrInstance)
-                          ? classOrInstance
-                          : $classOf(classOrInstance);
-    if ($isNothing(source)) { return false; }
-    return $mapFrom.dispatch(this, mapFrom, source, composer, false, m => mapFrom.mapping = m);
-});
+function _filterFormat(key, mapCallback) {
+    const prototype = Object.getPrototypeOf(this);
+    let formats = format.get(prototype, key);
+    if (!formats || formats.size === 0) {
+        formats = format.get(prototype);        
+    }
+    return !formats || formats.size === 0 ||
+        [...formats].some(f => $equals(mapCallback.format, f));
+}
 
 /**
  * Base class for controllers.
@@ -510,57 +388,209 @@ Handler.implement({
     }
 });
 
-const formatMetadataKey = Symbol();
+/**
+ * Protocol for mapping objects.
+ * @class Mapping
+ * @extends Protocol
+ */        
+export const Mapping = Protocol.extend({
+    /**
+     * Maps the `object` to a value in `format`.
+     * @method mapFrom
+     * @param   {Object}  object   -  object to map
+     * @param   {Any}     format   -  format specifier
+     * @param   {Object}  options  -  mapping options
+     * @returns {Any}  mapped value.
+     */
+    mapFrom(object, format, options) {},
+    /**
+     * Maps the formatted `value` in `format` to `classOrInstance`.
+     * @method mapTo 
+     * @param   {Any}  value       -  formatted value
+     * @param   {Any}  format      -  format specifier
+     * @param   {Function|Object}  -  instance or class to unmap
+     * @param   {Object}  options  -  mapping options
+     * @return  {Object}  unmapped instance. 
+     */    
+    mapTo(value, format, classOrInstance, options) {}
+});
 
 /**
- * Map to decorator.
- * @method mapTo
- * @param {Array}  ...types  -  types to map
- */
-export function mapTo(...args) {
-    return decorate(addDefinition("mapTo", $mapTo, false, _filterFormat), args);
-}
+ * Protocol for mapping objects strictly.
+ * @class Mapper
+ * @extends StrictProtocol
+ * @uses Mapping
+ */        
+export const Mapper = StrictProtocol.extend(Mapping);
 
 /**
- * Map from decorator.
- * @method mapFrom
- * @param {Array}  ...types  -  types to map
+ * Base callback for mapping.
+ * @class MapCallback
+ * @constructor
+ * @param   {Any}     format   -  format specifier
+ * @param   {Object}  options  -  mapping options
+ * @extends Base
  */
-export function mapFrom(...args) {
-    return decorate(addDefinition("mapFrom", $mapFrom, false, _filterFormat), args);
-}
-
-/**
- * Mapping formats.
- * @method format
- * @param {Array}  ...formats  -  mapping formats 
- */
-export const format = Metadata.decorator(formatMetadataKey,
-    (target, key, descriptor, formats) => {
-        const property = isDescriptor(descriptor);
-        formats = $flatten(property ? formats : key);
-        if (formats.length === 0) { return; }
-        const metadata = property
-            ? Metadata.getOrCreateOwn(formatMetadataKey, target, key, () => new Set())
-            : Metadata.getOrCreateOwn(formatMetadataKey, target.prototype, () => new Set());
-        formats.forEach(format => metadata.add(format));
-    });
-
-function _filterFormat(key, mapCallback) {
-    const prototype = Object.getPrototypeOf(this);
-    let formats = format.get(prototype, key);
-    if (!formats || formats.size === 0) {
-        formats = format.get(prototype);        
+const MapCallback = Base.extend({
+    constructor(format, options) {
+        this.extend({
+            /**
+             * Gets the format to map.
+             * @property {Any} format
+             * @readOnly
+             */                                                
+            get format() { return format; },
+            /**
+             * Gets the mapping options.
+             * @property {Object} options
+             * @readOnly
+             */                                                
+            get options() { return options; }            
+        });
     }
-    return !formats || formats.size === 0 ||
-        [...formats].some(f => $equals(mapCallback.format, f));
-}
+});
+
+/**
+ * Callback to map an `object` to `format`.
+ * @class MapTo
+ * @constructor
+ * @param   {Object}  object     -  object to map
+ * @param   {Any}     format     -  format specifier
+ * @param   {Object}  [options]  -  mapping options
+ * @extends MapCallback
+ */
+export const MapFrom = MapCallback.extend({
+    constructor(object, format, options) {
+        this.base(format, options);
+        this.extend({
+            /**
+             * Gets the target object to map.
+             * @property {Object} object
+             * @readOnly
+             */                                
+            get object() { return object; }
+        });
+    }
+});
+
+/**
+ * Callback to map a formatted `value` into an object.
+ * @class MapFrom
+ * @constructor
+ * @param   {Any}              value            -  formatted value
+ * @param   {Any}              format           -  format specifier
+ * @param   {Function|Object}  classOrInstance  -  instance or class to unmap
+ * @param   {Object}           [options]        -  mapping options
+ * @extends MapCallback
+ */
+export const MapTo = MapCallback.extend({
+    constructor(value, format, classOrInstance, options) {
+        this.base(format, options);
+        if ($isNothing(classOrInstance)) {
+            classOrInstance = $classOf(value);
+        }
+        this.extend({
+            /**
+             * Gets the formatted value.
+             * @property {Any} value
+             * @readOnly
+             */                                
+            get value() { return value; },
+            /**
+             * Gets the class or instance to unmap into.
+             * @property {Function|Object} classOrInstance
+             * @readOnly
+             */                                                
+            get classOrInstance() { return classOrInstance; }
+        });
+    }
+});
+
+/**
+ * Handler for performing object mappings.
+ * @class MappingHandler
+ * @extends Handler
+ */        
+export const MappingHandler = Handler.extend(Mapper, {
+    mapFrom(object, format, options) {
+        if ($isNothing(object)) {
+            throw new TypeError("Missing object to map");
+        }
+        const mapFrom = new MapFrom(object, format, options);
+        if ($composer.handle(mapFrom)) {
+            return mapFrom.mapping;
+        }
+    },
+    mapTo(value, format, classOrInstance, options) {
+        if ($isNothing(value)) {
+            throw new TypeError("Missing value to map from");
+        }
+        if (Array.isArray(classOrInstance)) {
+            const type = classOrInstance[0];
+            if (type && !$isFunction(type) && !Array.isArray(type)) {
+                throw new TypeError("Cannot infer array type");
+            }
+        } else if (Array.isArray(value) && $isFunction(classOrInstance)) {
+            classOrInstance = [classOrInstance];
+        }
+        const mapTo = new MapTo(value, format, classOrInstance, options);
+        if ($composer.handle(mapTo)) {
+            return mapTo.mapping;
+        }
+    }    
+});
+
+/**
+ * Abstract mapping.
+ * @class Abstract mapping
+ * @extends Handler
+ */        
+export const AbstractMapping = Handler.extend({
+    @mapFrom
+    mapFrom(mapFrom, composer) {
+        return $unhandled;
+    },
+
+    @mapTo
+    mapTo(mapTo, composer) {
+    },
+
+    canSetProperty(descriptor) {
+        return !$isFunction(descriptor.value);        
+    },
+    isPrimitiveValue(value) {
+        switch (typeOf(value)) {
+            case "null":
+            case "number":
+            case "string":
+            case "boolean":        
+            return true;
+        }
+        return false;        
+    }
+});
+
+$handle(Handler.prototype, MapFrom, function (mapFrom, composer) {
+    const target = mapFrom.object,
+          source = $classOf(target);
+    if ($isNothing(source)) { return false; }
+    return $mapFrom.dispatch(this, mapFrom, source, composer, false, m => mapFrom.mapping = m);
+});
+
+$handle(Handler.prototype, MapTo, function (mapTo, composer) {
+    const classOrInstance = mapTo.classOrInstance,
+          source          = $isFunction(classOrInstance)
+                          ? classOrInstance
+                          : $classOf(classOrInstance);
+    if ($isNothing(source)) { return false; }
+    return $mapTo.dispatch(this, mapTo, source, composer, false, m => mapTo.mapping = m);
+});
 
 /**
  * Javascript Object Notation
  * @property {Any} JsonFormat
  */
-export const JsonFormat      = "json",
+export const JsonFormat      = Symbol(),
              JsonContentType = "application/json";
 
 /**
@@ -569,31 +599,32 @@ export const JsonFormat      = "json",
  * @extends Handler
  * @uses Mapper
  */
-export const JsonMapping = Handler.extend(
+export const JsonMapping = AbstractMapping.extend(
     format(JsonFormat, JsonContentType), {
-    @mapTo(Date)
-    mapDateToJson(mapTo) {
-        return mapTo.object.toJSON();
+    @mapFrom(Date)
+    mapFromDate(mapFrom) {
+        return mapFrom.object.toJSON();
     },
-    @mapTo(RegExp)
-    mapRegExpToJson(mapTo) {
-        return mapTo.object.toString();
+    @mapFrom(RegExp)
+    mapFromRegExp(mapFrom) {
+        return mapFrom.object.toString();
     },
-    @mapTo(Array)
-    mapArrayToJson(mapTo, composer) {
-        const array  = mapTo.object,
-              mapper = Mapper(composer);
-        return array.map(elem => mapper.mapTo(elem, mapTo.format, mapTo.options)); 
+    @mapFrom(Array)
+    mapFromArray(mapFrom, composer) {
+        const array   = mapFrom.object,
+              format  = mapFrom.format,
+              options = mapFrom.options,
+              mapper  = Mapper(composer);
+        return array.map(elem => mapper.mapFrom(elem, format, options)); 
     },
-    @mapTo
-    mapToJson(mapTo, composer) {
-        const object = mapTo.object;
+    mapFrom(mapFrom, composer) {
+        const object = mapFrom.object;
         if (!_canMapJson(object)) { return; }
-        if (_isJsonValue(object)) {
+        if (this.isPrimitiveValue(object)) {
             return object && object.valueOf();
         }
-        const format  = mapTo.format,
-              options = mapTo.options,
+        const format  = mapFrom.format,
+              options = mapFrom.options,
               spec    = options && options.spec,
               raw     = $isPlainObject(object),
               all     = !$isPlainObject(spec);              
@@ -622,11 +653,11 @@ export const JsonMapping = Handler.extend(
                     spec: { value: keySpec }
                 }) : options;
                 if (!_canMapJson(keyValue)) { return; }
-                if (_isJsonValue(keyValue)) {
+                if (this.isPrimitiveValue(keyValue)) {
                     json[key] = keyValue && keyValue.valueOf();
                     return;
                 }
-                const keyJson = mapper.mapTo(keyValue, format, keyOptions);
+                const keyJson = mapper.mapFrom(keyValue, format, keyOptions);
                 if (map && map.root) {
                     Object.assign(json, keyJson);
                 } else {                 
@@ -637,34 +668,35 @@ export const JsonMapping = Handler.extend(
         return json;
     },
    
-    @mapFrom(Date)
-    mapDateFromJson(mapFrom) {
-        const date = mapFrom.value;
+    @mapTo(Date)
+    mapToDate(mapTo) {
+        const date = mapTo.value;
         return instanceOf(date, Date) ? date : Date.parse(date);
     },
-    @mapFrom(RegExp)
-    mapRegExpFromJson(mapFrom) {
-        const pattern   = mapFrom.value,
+    @mapTo(RegExp)
+    mapToRegExp(mapTo) {
+        const pattern   = mapTo.value,
               fragments = pattern.match(/\/(.*?)\/([gimy])?$/);              
         return new RegExp(fragments[1], fragments[2] || "")
     },
-    @mapFrom(Array)
-    mapArrayFromJson(mapFrom, composer) {
-        const array  = mapFrom.value,
-              mapper = Mapper(composer);
-        let   type   = mapFrom.classOrInstance;
+    @mapTo(Array)
+    mapToArray(mapTo, composer) {
+        const array   = mapTo.value,
+              format  = mapTo.format,
+              options = mapTo.options,
+              mapper  = Mapper(composer);
+        let type = mapTo.classOrInstance;
         type = Array.isArray(type) ? type[0] : undefined;
-        return array.map(elem => mapper.mapFrom(elem, mapFrom.format, type, mapFrom.options)); 
+        return array.map(elem => mapper.mapTo(elem, format, type, options)); 
     },        
-    @mapFrom
-    mapFromJson(mapFrom, composer) {
-        const value = mapFrom.value;
+    mapTo(mapTo, composer) {
+        const value = mapTo.value;
         if (!_canMapJson(value)) { return; }
-        if (_isJsonValue(value)) { return value; }
-        const classOrInstance = mapFrom.classOrInstance;
+        if (this.isPrimitiveValue(value)) { return value; }
+        const classOrInstance = mapTo.classOrInstance;
         if ($isNothing(classOrInstance)) { return; }
-        const format  = mapFrom.format,
-              options = mapFrom.options,
+        const format  = mapTo.format,
+              options = mapTo.options,
               object  = $isFunction(classOrInstance)
                       ? Reflect.construct(classOrInstance, emptyArray)
                       : classOrInstance;
@@ -674,7 +706,7 @@ export const JsonMapping = Handler.extend(
               descriptors = getPropertyDescriptors(object);
         Reflect.ownKeys(descriptors).forEach(key => {
             const descriptor = descriptors[key];
-            if (_canSetProperty(descriptor)) {
+            if (this.canSetProperty(descriptor)) {
                 const map = mapping.get(object, key);
                 if (map && map.root) {
                     object[key] = _mapFromJson(object, key, value, mapper, format, options);
@@ -690,7 +722,7 @@ export const JsonMapping = Handler.extend(
             const keyValue = value[key];
             if (keyValue === undefined) { continue; }
             if (descriptor) {
-                if (_canSetProperty(descriptor)) {
+                if (this.canSetProperty(descriptor)) {
                     object[key] = _mapFromJson(object, key, keyValue, mapper, format, options);
                 }
             } else {
@@ -698,7 +730,7 @@ export const JsonMapping = Handler.extend(
                 let   found = false;
                 for (let k in descriptors) {
                     if (k.toLowerCase() === lkey) {
-                        if (_canSetProperty(descriptors[k])) {                        
+                        if (this.canSetProperty(descriptors[k])) {                        
                             object[k] = _mapFromJson(object, k, keyValue, mapper, format, options);
                         }
                         found = true;
@@ -718,22 +750,7 @@ function _canMapJson(value) {
     return value !== undefined && !$isFunction(value) && !$isSymbol(value);
 }
 
-function _canSetProperty(descriptor) {
-    return !$isFunction(descriptor.value);
-}
-
-function _isJsonValue(value) {
-    switch (typeOf(value)) {
-        case "null":
-        case "number":
-        case "string":
-        case "boolean":        
-            return true;
-    }
-    return false;
-}
-
 function _mapFromJson(target, key, value, mapper, format, options) {
     const type = design.get(target, key);
-    return mapper.mapFrom(value, format, type, options);
+    return mapper.mapTo(value, format, type, options);
 }

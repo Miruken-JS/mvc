@@ -1,28 +1,40 @@
 import {
-    Metadata, decorate, $flatten, $equals, isDescriptor
+    Variance, Metadata, decorate,
+    $flatten, $equals, isDescriptor
 } from "miruken-core";
 
-import { addDefinition } from "miruken-callback";
-import { $mapTo, $mapFrom } from "./mapper";
+import { $define, addDefinition } from "miruken-callback";
 
 const formatMetadataKey = Symbol();
 
 /**
- * Map to decorator.
+ * Definition for mapping a value to a format.
+ * @property {Function} $mapFrom
+ */
+export const $mapFrom = $define(Variance.Contravariant);
+
+/**
+ * Definition for mapping from a formatted value.
+ * @property {Function} $mapTo
+ */
+export const $mapTo = $define(Variance.Covariant);
+
+/**
+ * Decorator for mapping a value to a format.
+ * @method mapFrom
+ * @param {Array}  ...types  -  types to map from
+ */
+export function mapFrom(...args) {
+    return decorate(addDefinition("mapFrom", $mapFrom, false, _filterFormat), args);
+}
+
+/**
+ * Decorator for mapping from a formatted value.
  * @method mapTo
  * @param {Array}  ...types  -  types to map
  */
 export function mapTo(...args) {
     return decorate(addDefinition("mapTo", $mapTo, false, _filterFormat), args);
-}
-
-/**
- * Map from decorator.
- * @method mapFrom
- * @param {Array}  ...types  -  types to map
- */
-export function mapFrom(...args) {
-    return decorate(addDefinition("mapFrom", $mapFrom, false, _filterFormat), args);
 }
 
 /**
