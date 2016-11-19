@@ -22,13 +22,7 @@ module.exports = function(config) {
         },
 
         babelPreprocessor: {
-            options: {
-                sourceMap: 'inline',
-                presets: [ 'es2015'],
-                plugins: [
-                    'transform-decorators-legacy'
-                ]
-            }
+            options: compilerOptions.commonjs()
         },
 
         reporters: ['coverage', 'progress'],

@@ -1,6 +1,9 @@
-define(['exports', 'miruken-callback', 'miruken-validate', 'miruken-context', 'miruken-core'], function (exports, mirukenCallback, mirukenValidate, mirukenContext, mirukenCore) { 'use strict';
+import { Handler } from 'miruken-callback';
+import { Validating, Validator } from 'miruken-validate';
+import { contextual } from 'miruken-context';
+import { Base, Policy, Protocol, StrictProtocol } from 'miruken-core';
 
-var Controller = mirukenCallback.Handler.extend(mirukenContext.contextual, mirukenValidate.Validating, {
+var Controller = Handler.extend(contextual, Validating, {
     validate: function validate(target, scope) {
         return _validateController(this, target, "validate", scope);
     },
@@ -14,11 +17,11 @@ function _validateController(controller, target, method, scope) {
     if (!context) {
         throw new Error("Validation requires a context to be available.");
     }
-    var validator = mirukenValidate.Validator(context);
+    var validator = Validator(context);
     return validator[method].call(validator, target || controller, scope);
 }
 
-var MasterDetail = mirukenCore.Protocol.extend({
+var MasterDetail = Protocol.extend({
   getSelectedDetail: function getSelectedDetail(detailClass) {},
   getSelectedDetails: function getSelectedDetails(detailClass) {},
   selectDetail: function selectDetail(detail) {},
@@ -32,7 +35,7 @@ var MasterDetail = mirukenCore.Protocol.extend({
   removeDetail: function removeDetail(detail, deleteIt) {}
 });
 
-var MasterDetailAware = mirukenCore.Protocol.extend({
+var MasterDetailAware = Protocol.extend({
   masterChanged: function masterChanged(master) {},
   detailSelected: function detailSelected(detail, master) {},
   detailUnselected: function detailUnselected(detail, master) {},
@@ -41,7 +44,7 @@ var MasterDetailAware = mirukenCore.Protocol.extend({
   detailRemoved: function detailRemoved(detail, master) {}
 });
 
-var ViewRegion = mirukenCore.StrictProtocol.extend({
+var ViewRegion = StrictProtocol.extend({
   get name() {},
 
   get context() {},
@@ -54,13 +57,13 @@ var ViewRegion = mirukenCore.StrictProtocol.extend({
   present: function present(presentation) {}
 });
 
-var ViewRegionAware = mirukenCore.Protocol.extend({
+var ViewRegionAware = Protocol.extend({
   viewRegionCreated: function viewRegionCreated(viewRegion) {}
 });
 
-var PresentationPolicy = mirukenCore.Policy.extend();
+var PresentationPolicy = Policy.extend();
 
-var ButtonClicked = mirukenCore.Base.extend({
+var ButtonClicked = Base.extend({
   constructor: function constructor(button, buttonIndex) {
     this.extend({
       get button() {
@@ -74,7 +77,7 @@ var ButtonClicked = mirukenCore.Base.extend({
   }
 });
 
-mirukenCallback.Handler.registerPolicy(PresentationPolicy, "presenting");
+Handler.registerPolicy(PresentationPolicy, "presenting");
 
 var ModalPolicy = PresentationPolicy.extend({
   title: "",
@@ -86,26 +89,14 @@ var ModalPolicy = PresentationPolicy.extend({
   buttons: null
 });
 
-var ModalProviding = mirukenCore.StrictProtocol.extend({
+var ModalProviding = StrictProtocol.extend({
   showModal: function showModal(container, content, policy, context) {}
 });
 
-mirukenCallback.Handler.implement({
+Handler.implement({
   modal: function modal(options) {
     return this.presenting(new ModalPolicy(options));
   }
 });
 
-exports.Controller = Controller;
-exports.MasterDetail = MasterDetail;
-exports.MasterDetailAware = MasterDetailAware;
-exports.ModalPolicy = ModalPolicy;
-exports.ModalProviding = ModalProviding;
-exports.ViewRegion = ViewRegion;
-exports.ViewRegionAware = ViewRegionAware;
-exports.PresentationPolicy = PresentationPolicy;
-exports.ButtonClicked = ButtonClicked;
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-});
+export { Controller, MasterDetail, MasterDetailAware, ModalPolicy, ModalProviding, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked };

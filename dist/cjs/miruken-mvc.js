@@ -1,4 +1,11 @@
-define(['exports', 'miruken-callback', 'miruken-validate', 'miruken-context', 'miruken-core'], function (exports, mirukenCallback, mirukenValidate, mirukenContext, mirukenCore) { 'use strict';
+'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var mirukenCallback = require('miruken-callback');
+var mirukenValidate = require('miruken-validate');
+var mirukenContext = require('miruken-context');
+var mirukenCore = require('miruken-core');
 
 var Controller = mirukenCallback.Handler.extend(mirukenContext.contextual, mirukenValidate.Validating, {
     validate: function validate(target, scope) {
@@ -105,7 +112,3 @@ exports.ViewRegion = ViewRegion;
 exports.ViewRegionAware = ViewRegionAware;
 exports.PresentationPolicy = PresentationPolicy;
 exports.ButtonClicked = ButtonClicked;
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-});
