@@ -22,7 +22,11 @@
       "dist": "dist/amd"
     },
     "dependencies": {
-      "chai": "^3.5.0"
+      "chai": "^3.5.0",
+      "miruken-callback": "^0.0.1",
+      "miruken-context": "^0.0.1",
+      "miruken-core": "^0.0.1",
+      "miruken-validate": "^0.0.1"
     },
     "devDependencies": {}
   },
@@ -58,6 +62,7 @@
     "karma-mocha": "^0.1.10",
     "karma-mocha-reporter": "^1.0.2",
     "karma-sourcemap-loader": "^0.3.7",
+    "miruken-tools": "0.0.2",
     "mocha": "^2.1.0",
     "require-dir": "^0.3.0",
     "rollup": "^0.36.3",
