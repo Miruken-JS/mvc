@@ -22,15 +22,21 @@
       "dist": "dist/amd"
     },
     "dependencies": {
-      "chai": "^3.5.0",
-      "miruken-callback": "^0.0.1",
-      "miruken-context": "^0.0.1",
-      "miruken-core": "^0.0.1",
-      "miruken-validate": "^0.0.1"
+      "miruken-callback": "0.0",
+      "miruken-context": "0.0",
+      "miruken-core": "0.0",
+      "miruken-validate": "0.0"
     },
-    "devDependencies": {}
+    "devDependencies": {
+      "chai": "^3.5.0"
+    }
   },
-  "dependencies": {},
+  "dependencies": {
+    "miruken-callback": "0.0",
+    "miruken-context": "0.0",
+    "miruken-core": "0.0",
+    "miruken-validate": "0.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.16.0",
     "babel-core": "^6.16.0",
@@ -41,6 +47,7 @@
     "babel-plugin-transform-es2015-modules-systemjs": "^6.6.5",
     "babel-preset-es2015": "^6.6.0",
     "babel-runtime": "^6.11.6",
+    "camelcase": "^4.0.0",
     "chai": "^3.5.0",
     "conventional-changelog": "^1.1.0",
     "del": "^2.2.0",

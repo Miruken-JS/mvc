@@ -107,4 +107,4 @@ exports.ViewRegionAware = ViewRegionAware;
 exports.PresentationPolicy = PresentationPolicy;
 exports.ButtonClicked = ButtonClicked;
 
-}((this.miruken-mvc = this.miruken-mvc || {}),mirukenCallback,mirukenValidate,mirukenContext,mirukenCore));
+}((this.mirukenMvc = this.mirukenMvc || {}),mirukenCallback,mirukenValidate,mirukenContext,mirukenCore));

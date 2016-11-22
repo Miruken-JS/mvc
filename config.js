@@ -12,11 +12,10 @@ System.config({
     "babel-runtime": "npm:babel-runtime@6.11.6",
     "chai": "npm:chai@3.5.0",
     "core-js": "npm:core-js@1.2.7",
-    "miruken-callback": "npm:miruken-callback@0.0.1",
-    "miruken-context": "npm:miruken-context@0.0.1",
-    "miruken-core": "npm:miruken-core@0.0.1",
-    "miruken-validate": "npm:miruken-validate@0.0.1",
-    "reflect-metadata": "npm:reflect-metadata@0.1.8",
+    "miruken-callback": "npm:miruken-callback@0.0.3",
+    "miruken-context": "npm:miruken-context@0.0.4",
+    "miruken-core": "npm:miruken-core@0.0.2",
+    "miruken-validate": "npm:miruken-validate@0.0.2",
     "–latest": "npm:babel-core@5.8.38",
     "–latest-runtime": "npm:babel-runtime@5.8.38",
     "github:jspm/nodelibs-assert@0.1.0": {
@@ -277,20 +276,20 @@ System.config({
       "brace-expansion": "npm:brace-expansion@1.1.6",
       "path": "github:jspm/nodelibs-path@0.1.0"
     },
-    "npm:miruken-callback@0.0.1": {
-      "miruken-core": "npm:miruken-core@0.0.1"
+    "npm:miruken-callback@0.0.3": {
+      "miruken-core": "npm:miruken-core@0.0.2"
     },
-    "npm:miruken-context@0.0.1": {
-      "miruken-callback": "npm:miruken-callback@0.0.1",
-      "miruken-core": "npm:miruken-core@0.0.1"
+    "npm:miruken-context@0.0.4": {
+      "miruken-callback": "npm:miruken-callback@0.0.3",
+      "miruken-core": "npm:miruken-core@0.0.2"
     },
-    "npm:miruken-core@0.0.1": {
+    "npm:miruken-core@0.0.2": {
       "reflect-metadata": "npm:reflect-metadata@0.1.8"
     },
-    "npm:miruken-validate@0.0.1": {
-      "miruken-callback": "npm:miruken-callback@0.0.1",
-      "miruken-context": "npm:miruken-context@0.0.1",
-      "miruken-core": "npm:miruken-core@0.0.1",
+    "npm:miruken-validate@0.0.2": {
+      "miruken-callback": "npm:miruken-callback@0.0.3",
+      "miruken-context": "npm:miruken-context@0.0.4",
+      "miruken-core": "npm:miruken-core@0.0.2",
       "validate.js": "npm:validate.js@0.10.0"
     },
     "npm:mkdirp@0.5.1": {
