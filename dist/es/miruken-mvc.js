@@ -1,7 +1,7 @@
 import { Handler } from 'miruken-callback';
 import { Validating, Validator } from 'miruken-validate';
 import { contextual } from 'miruken-context';
-import { Base, Policy, Protocol, StrictProtocol } from 'miruken-core';
+import { Base, Disposing, Policy, Protocol } from 'miruken-core';
 
 var Controller = Handler.extend(contextual, Validating, {
     validate: function validate(target, scope) {
@@ -44,17 +44,12 @@ var MasterDetailAware = Protocol.extend({
   detailRemoved: function detailRemoved(detail, master) {}
 });
 
-var ViewRegion = StrictProtocol.extend({
-  get name() {},
+var ViewLayer = Protocol.extend(Disposing, {
+  get index() {}
+});
 
-  get context() {},
-
-  get container() {},
-
-  get controller() {},
-
-  get controllerContext() {},
-  present: function present(presentation) {}
+var ViewRegion = Protocol.extend({
+  show: function show(view) {}
 });
 
 var ViewRegionAware = Protocol.extend({
@@ -62,6 +57,22 @@ var ViewRegionAware = Protocol.extend({
 });
 
 var PresentationPolicy = Policy.extend();
+
+var ModalPolicy = PresentationPolicy.extend({
+  title: "",
+  style: null,
+  chrome: true,
+  header: false,
+  footer: false,
+  forceClose: false,
+  buttons: null
+});
+
+var RegionPolicy = PresentationPolicy.extend({
+  tag: undefined,
+  push: false,
+  modal: undefined
+});
 
 var ButtonClicked = Base.extend({
   constructor: function constructor(button, buttonIndex) {
@@ -77,26 +88,24 @@ var ButtonClicked = Base.extend({
   }
 });
 
-Handler.registerPolicy(PresentationPolicy, "presenting");
-
-var ModalPolicy = PresentationPolicy.extend({
-  title: "",
-  style: null,
-  chrome: true,
-  header: false,
-  footer: false,
-  forceClose: false,
-  buttons: null
-});
-
 var ModalProviding = StrictProtocol.extend({
   showModal: function showModal(container, content, policy, context) {}
 });
 
+Handler.registerPolicy(PresentationPolicy, "presenting");
+
 Handler.implement({
-  modal: function modal(options) {
-    return this.presenting(new ModalPolicy(options));
+  region: function region(tag) {
+    return this.presenting(new RegionPolicy({ tag: tag }));
+  },
+  pushLayer: function pushLayer() {
+    return this.presenting(new RegionPolicy({ push: true }));
+  },
+  modal: function modal(_modal) {
+    return this.presenting(new RegionPolicy({
+      modal: new ModalPolicy(_modal)
+    }));
   }
 });
 
-export { Controller, MasterDetail, MasterDetailAware, ModalPolicy, ModalProviding, ViewRegion, ViewRegionAware, PresentationPolicy, ButtonClicked };
+export { Controller, MasterDetail, MasterDetailAware, ViewLayer, ViewRegion, ViewRegionAware, PresentationPolicy, ModalPolicy, RegionPolicy, ButtonClicked, ModalProviding };

@@ -6,7 +6,7 @@ import {
 } from "miruken-validate";
 
 import { Controller } from "../src/controller";
-import { ModalPolicy } from "../src/modal";
+//import { ModalPolicy } from "../src/modal";
 import { expect } from "chai";
 
 const Person = Base.extend({
@@ -196,6 +196,7 @@ describe("Controller", () => {
         });        
     });
 
+    /*
     describe("Handler", () => {
         describe("#modal", () => {
             it("should define modal policy", () => {
@@ -211,4 +212,5 @@ describe("Controller", () => {
             });
         });
     });
+    */
 });

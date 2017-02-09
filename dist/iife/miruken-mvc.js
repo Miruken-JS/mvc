@@ -42,17 +42,12 @@ var MasterDetailAware = mirukenCore.Protocol.extend({
   detailRemoved: function detailRemoved(detail, master) {}
 });
 
-var ViewRegion = mirukenCore.StrictProtocol.extend({
-  get name() {},
+var ViewLayer = mirukenCore.Protocol.extend(mirukenCore.Disposing, {
+  get index() {}
+});
 
-  get context() {},
-
-  get container() {},
-
-  get controller() {},
-
-  get controllerContext() {},
-  present: function present(presentation) {}
+var ViewRegion = mirukenCore.Protocol.extend({
+  show: function show(view) {}
 });
 
 var ViewRegionAware = mirukenCore.Protocol.extend({
@@ -60,6 +55,22 @@ var ViewRegionAware = mirukenCore.Protocol.extend({
 });
 
 var PresentationPolicy = mirukenCore.Policy.extend();
+
+var ModalPolicy = PresentationPolicy.extend({
+  title: "",
+  style: null,
+  chrome: true,
+  header: false,
+  footer: false,
+  forceClose: false,
+  buttons: null
+});
+
+var RegionPolicy = PresentationPolicy.extend({
+  tag: undefined,
+  push: false,
+  modal: undefined
+});
 
 var ButtonClicked = mirukenCore.Base.extend({
   constructor: function constructor(button, buttonIndex) {
@@ -75,36 +86,36 @@ var ButtonClicked = mirukenCore.Base.extend({
   }
 });
 
-mirukenCallback.Handler.registerPolicy(PresentationPolicy, "presenting");
-
-var ModalPolicy = PresentationPolicy.extend({
-  title: "",
-  style: null,
-  chrome: true,
-  header: false,
-  footer: false,
-  forceClose: false,
-  buttons: null
-});
-
-var ModalProviding = mirukenCore.StrictProtocol.extend({
+var ModalProviding = StrictProtocol.extend({
   showModal: function showModal(container, content, policy, context) {}
 });
 
+mirukenCallback.Handler.registerPolicy(PresentationPolicy, "presenting");
+
 mirukenCallback.Handler.implement({
-  modal: function modal(options) {
-    return this.presenting(new ModalPolicy(options));
+  region: function region(tag) {
+    return this.presenting(new RegionPolicy({ tag: tag }));
+  },
+  pushLayer: function pushLayer() {
+    return this.presenting(new RegionPolicy({ push: true }));
+  },
+  modal: function modal(_modal) {
+    return this.presenting(new RegionPolicy({
+      modal: new ModalPolicy(_modal)
+    }));
   }
 });
 
 exports.Controller = Controller;
 exports.MasterDetail = MasterDetail;
 exports.MasterDetailAware = MasterDetailAware;
-exports.ModalPolicy = ModalPolicy;
-exports.ModalProviding = ModalProviding;
+exports.ViewLayer = ViewLayer;
 exports.ViewRegion = ViewRegion;
 exports.ViewRegionAware = ViewRegionAware;
 exports.PresentationPolicy = PresentationPolicy;
+exports.ModalPolicy = ModalPolicy;
+exports.RegionPolicy = RegionPolicy;
 exports.ButtonClicked = ButtonClicked;
+exports.ModalProviding = ModalProviding;
 
 }((this.mirukenMvc = this.mirukenMvc || {}),mirukenCallback,mirukenValidate,mirukenContext,mirukenCore));
