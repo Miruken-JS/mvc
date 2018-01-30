@@ -1,6 +1,7 @@
 bin/
 gen/
 debug/
+dist/
 *~
 node_modules
 jspm_packages

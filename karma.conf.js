@@ -1,11 +1,8 @@
 var isparta = require('isparta');
 var paths = require('./build/paths');
-var compilerOptions = require('./build/babel-options');
 
 module.exports = function(config) {
     config.set({
-        // base path that will be used to resolve all patterns (eg. files, exclude)
-        basePath: '',
         
         frameworks: ['jspm', 'mocha', 'chai'],
 
@@ -22,7 +19,15 @@ module.exports = function(config) {
         },
 
         babelPreprocessor: {
-            options: compilerOptions.commonjs()
+            options: {
+                "presets": [
+                    ["env", {
+                        "targets": {
+                            "browsers": [ "last 2 Chrome versions" ]
+                        }
+                    }]
+                ]
+            }
         },
 
         reporters: ['coverage', 'progress'],
