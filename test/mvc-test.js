@@ -2,7 +2,7 @@ import { Base, design } from "miruken-core";
 import { Context } from "miruken-context";
 import {
     ValidationHandler, ValidateJsHandler,
-    required, number, applyConstraints
+    required, number, valid
 } from "miruken-validate";
 
 import { Controller } from "../src/controller";
@@ -27,7 +27,7 @@ const Doctor = Person.extend({
 const PersonController = Controller.extend({
     @design(Person)
     @required
-    @applyConstraints
+    @valid
     person: undefined
 });
 

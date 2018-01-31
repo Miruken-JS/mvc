@@ -104,9 +104,9 @@ export const ButtonClicked = Base.extend({
 /**
  * Protocol for interacting with a modal provider.
  * @class ModalProviding
- * @extends StrictProtocol
+ * @extends Protocol
  */
-export const ModalProviding = StrictProtocol.extend({
+export const ModalProviding = Protocol.extend({
     /**
      * Presents the content in a modal dialog.
      * @method showModal

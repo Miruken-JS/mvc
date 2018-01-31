@@ -64,7 +64,7 @@ System.config({
       "miruken-core": "npm:miruken-core@0.0.3"
     },
     "npm:miruken-core@0.0.3": {
-      "reflect-metadata": "npm:reflect-metadata@0.1.9"
+      "reflect-metadata": "npm:reflect-metadata@0.1.12"
     },
     "npm:miruken-validate@0.0.2": {
       "miruken-callback": "npm:miruken-callback@0.0.4",
