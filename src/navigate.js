@@ -11,25 +11,14 @@ import {
 } from "miruken-validate";
 
 import { contextual } from "miruken-context";
+import { Errors } from "miruken-error";
 
 import {
-    Controller, ControllerNotFound
+    Navigation, Controller, ControllerNotFound
 } from "./controller";
 
 const globalPrepare = [],
       globalExecute = [];
-
-/**
- * Captures a navigation context.
- * @class Navigation
- * @extends Base
- */        
-export const Navigation = Base.extend({
-    push:       undefined,
-    controller: undefined,
-    action:     undefined,
-    args:       undefined
-});
 
 /**
  * Protocol to navigate controllers.
@@ -40,19 +29,21 @@ export const Navigate = Protocol.extend({
     /**
      * Transitions to next `action` on `controller`.
      * @method next
-     * @param   {Any}       controller  -  controller key
-     * @param   {Function}  action      -  controller action
+     * @param   {Any}       controller     -  controller key
+     * @param   {Function}  action         -  controller action
+     * @param   {Function}  [configureIO]  -  configures io
      * @returns {Promise} promise when transition complete.
      */        
-    next(controller, action) {},
+    next(controller, action, configureIO) {},
     /**
      * Transitions to next `action` on `controller` in a new context.
      * @method to
-     * @param   {Any}       controller  -  controller key
-     * @param   {Function}  action      -  controller action
+     * @param   {Any}       controller     -  controller key
+     * @param   {Function}  action         -  controller action
+     * @param   {Function}  [configureIO]  -  configures io
      * @returns {Promise} promise when transition complete.
      */        
-    push(controller, action) {}        
+    push(controller, action, configureIO) {}        
 });
 
 /**
@@ -63,23 +54,26 @@ export const Navigate = Protocol.extend({
  * @uses Navigate
  */    
 export const NavigateHandler = CompositeHandler.extend(Navigate, {
-    next(controller, action) {
-        return this.to(controller, action, false);
+    next(controller, action, configureIO) {
+        return this.to(controller, action, false, configureIO);
     },
-    push(controller, action) {
-        return this.to(controller, action, true);            
+    push(controller, action, configureIO) {
+        return this.to(controller, action, true, configureIO);
     },        
-    to(controller, action, push) {
+    to(controller, action, push, configureIO) {
         if (action == null) {
             return Promise.reject(new Error("Missing action"));
         };
         
-        var composer  = $composer,
+        let composer  = $composer,
             context   = composer.resolve(Context),
             initiator = composer.resolve(Controller),
             ctx       = push ? context.newChild() : context;
 
-        var oldIO = Controller.io;
+        if (!push && initiator != null && (initiator.context == ctx)) {
+            initiator.context = null;
+        }
+        
         return Promise.resolve(ctx.resolve(controller))
             .then(function (ctrl) {
                 if (!ctrl) {
@@ -88,19 +82,18 @@ export const NavigateHandler = CompositeHandler.extend(Navigate, {
                 try {
                     if (push) {
                         composer = composer.pushLayer();
-                    } else if ((ctrl != initiator) && (initiator != null) &&
-                               (initiator.context == ctx)) {
-                        initiator.context = null;
                     }
-                    Controller.io = ctx === context ? composer
-                                  : ctx.$self().next(composer);
+                    let io = ctx === context ? composer
+                           : ctx.$self().next(composer);
+                    if ($isFunction(configureIO)) {
+                        io = configureIO(io, ctrl) || io;
+                    }
+                    _bindIO(io, ctrl);                        
                     return action(ctrl);
+                } catch (exception) {
+                    return Errors(ctrl.io).handleException(exception);
                 } finally {
-                    if (oldIO) {
-                        Controller.io = oldIO;
-                    } else {
-                        Reflect.deleteProperty(Controller, "io");
-                    }
+                    _bindIO(null, ctrl);
                 }
             });
     }

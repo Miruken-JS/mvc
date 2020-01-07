@@ -2,7 +2,7 @@ import {
     Base, Protocol, Policy, Disposing
 } from "miruken-core";
 
-import { Handler, handle } from "miruken-callback";
+import { Handler } from "miruken-callback";
 
 /**
  * Protocol for representing a layer in a 

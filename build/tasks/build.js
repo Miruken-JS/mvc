@@ -16,7 +16,8 @@ gulp.task("rollup", function(done) {
             "miruken-core",
             "miruken-callback",
             "miruken-context",
-            "miruken-validate"
+            "miruken-validate",
+            "miruken-error",            
         ],
         plugins: [
             rollupMultiEntry(),
@@ -37,6 +38,7 @@ gulp.task("rollup", function(done) {
                         "miruken-callback": "mirukenCallback",
                         "miruken-context": "mirukenContext",
                         "miruken-validate": "mirukenValidate",
+                        "miruken-error": "mirukenError",                        
                     }
                 }
             });
