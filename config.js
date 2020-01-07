@@ -8,10 +8,11 @@ System.config({
 
   map: {
     "chai": "npm:chai@3.5.0",
-    "miruken-callback": "npm:miruken-callback@0.0.5-alpha.20",
-    "miruken-context": "npm:miruken-context@0.0.5-alpha.2",
-    "miruken-core": "npm:miruken-core@0.0.5-alpha.1",
-    "miruken-validate": "npm:miruken-validate@0.0.5-alpha.1",
+    "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
+    "miruken-context": "npm:miruken-context@0.0.5-alpha.3",
+    "miruken-core": "npm:miruken-core@0.0.5-alpha.2",
+    "miruken-error": "npm:miruken-error@0.0.5-alpha.2",
+    "miruken-validate": "npm:miruken-validate@0.0.5-alpha.3",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.5.0"
     },
@@ -56,17 +57,32 @@ System.config({
     "npm:miruken-callback@0.0.5-alpha.20": {
       "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
     },
+    "npm:miruken-callback@0.0.5-alpha.22": {
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.2"
+    },
     "npm:miruken-context@0.0.5-alpha.2": {
       "miruken-callback": "npm:miruken-callback@0.0.5-alpha.20",
       "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
     },
+    "npm:miruken-context@0.0.5-alpha.3": {
+      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.2"
+    },
     "npm:miruken-core@0.0.5-alpha.1": {
       "reflect-metadata": "npm:reflect-metadata@0.1.13"
     },
-    "npm:miruken-validate@0.0.5-alpha.1": {
+    "npm:miruken-core@0.0.5-alpha.2": {
+      "reflect-metadata": "npm:reflect-metadata@0.1.13"
+    },
+    "npm:miruken-error@0.0.5-alpha.2": {
       "miruken-callback": "npm:miruken-callback@0.0.5-alpha.20",
       "miruken-context": "npm:miruken-context@0.0.5-alpha.2",
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.1",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
+    },
+    "npm:miruken-validate@0.0.5-alpha.3": {
+      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
+      "miruken-context": "npm:miruken-context@0.0.5-alpha.3",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.2",
       "validate.js": "npm:validate.js@0.10.0"
     },
     "npm:process@0.11.10": {
