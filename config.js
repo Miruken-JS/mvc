@@ -8,11 +8,11 @@ System.config({
 
   map: {
     "chai": "npm:chai@3.5.0",
-    "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
-    "miruken-context": "npm:miruken-context@0.0.5-alpha.3",
-    "miruken-core": "npm:miruken-core@0.0.5-alpha.2",
-    "miruken-error": "npm:miruken-error@0.0.5-alpha.2",
-    "miruken-validate": "npm:miruken-validate@0.0.5-alpha.3",
+    "miruken-callback": "npm:miruken-callback@0.0.5-alpha.24",
+    "miruken-context": "npm:miruken-context@0.0.5-alpha.5",
+    "miruken-core": "npm:miruken-core@0.0.5-alpha.3",
+    "miruken-error": "npm:miruken-error@0.0.5-alpha.4",
+    "miruken-validate": "npm:miruken-validate@0.0.5-alpha.6",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.5.0"
     },
@@ -54,35 +54,25 @@ System.config({
     "npm:inherits@2.0.1": {
       "util": "github:jspm/nodelibs-util@0.1.0"
     },
-    "npm:miruken-callback@0.0.5-alpha.20": {
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
+    "npm:miruken-callback@0.0.5-alpha.24": {
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.3"
     },
-    "npm:miruken-callback@0.0.5-alpha.22": {
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.2"
+    "npm:miruken-context@0.0.5-alpha.5": {
+      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.24",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.3"
     },
-    "npm:miruken-context@0.0.5-alpha.2": {
-      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.20",
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
-    },
-    "npm:miruken-context@0.0.5-alpha.3": {
-      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.2"
-    },
-    "npm:miruken-core@0.0.5-alpha.1": {
+    "npm:miruken-core@0.0.5-alpha.3": {
       "reflect-metadata": "npm:reflect-metadata@0.1.13"
     },
-    "npm:miruken-core@0.0.5-alpha.2": {
-      "reflect-metadata": "npm:reflect-metadata@0.1.13"
+    "npm:miruken-error@0.0.5-alpha.4": {
+      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.24",
+      "miruken-context": "npm:miruken-context@0.0.5-alpha.5",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.3"
     },
-    "npm:miruken-error@0.0.5-alpha.2": {
-      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.20",
-      "miruken-context": "npm:miruken-context@0.0.5-alpha.2",
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.1"
-    },
-    "npm:miruken-validate@0.0.5-alpha.3": {
-      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.22",
-      "miruken-context": "npm:miruken-context@0.0.5-alpha.3",
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.2",
+    "npm:miruken-validate@0.0.5-alpha.6": {
+      "miruken-callback": "npm:miruken-callback@0.0.5-alpha.24",
+      "miruken-context": "npm:miruken-context@0.0.5-alpha.5",
+      "miruken-core": "npm:miruken-core@0.0.5-alpha.3",
       "validate.js": "npm:validate.js@0.10.0"
     },
     "npm:process@0.11.10": {
