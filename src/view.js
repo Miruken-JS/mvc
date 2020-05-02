@@ -1,5 +1,5 @@
 import {
-    Base, Protocol, Policy, Disposing
+    Base, Protocol, Options, Disposing
 } from "miruken-core";
 
 import { Handler } from "miruken-callback";
@@ -44,18 +44,18 @@ export const ViewRegionAware = Protocol.extend({
 });
 
 /**
- * Base class for presentation policies.
- * @class PresentationPolicy
- * @extends Policy
+ * Base class for presentation options.
+ * @class PresentationOptions
+ * @extends Options
  */
-export const PresentationPolicy = Policy.extend();
+export const PresentationOptions = Options.extend();
 
 /**
- * Policy for describing modal presentation.
- * @class ModalPolicy
- * @extends PresentationPolicy
+ * Options for describing modal presentation.
+ * @class ModalOptions
+ * @extends PresentationOptions
  */
-export const ModalPolicy = PresentationPolicy.extend({
+export const ModalOptions = PresentationOptions.extend({
     title:      "",
     style:      null,
     chrome:     true,
@@ -66,11 +66,11 @@ export const ModalPolicy = PresentationPolicy.extend({
 });
 
 /**
- * Policy for controlling regions.
- * @class RegionPolicy
- * @extends miruken.mvc.PresentationPolicy
+ * Options for controlling regions.
+ * @class RegionOptions
+ * @extends PresentationOptions
  */
-export const RegionPolicy = PresentationPolicy.extend({
+export const RegionOptions = PresentationOptions.extend({
     tag:   undefined,
     push:  false,
     modal: undefined
@@ -112,14 +112,14 @@ export const ModalProviding = Protocol.extend({
      * @method showModal
      * @param   {Element}      container  -  element modal bound to
      * @param   {Element}      content    -  modal content element
-     * @param   {ModalPolicy}  policy     -  modal policy options
+     * @param   {ModalOptions} options    -  modal options
      * @param   {Context}      context    -  modal context
      * @returns {Promise} promise representing the modal result.
      */
-    showModal(container, content, policy, context) {}
+    showModal(container, content, options, context) {}
 });
 
-Handler.registerPolicy(PresentationPolicy, "presenting");
+Handler.registerOptions(PresentationOptions, "presenting");
 
 Handler.implement({
     /**
@@ -130,7 +130,7 @@ Handler.implement({
      * @for miruken.callback.CallbackHandler
      */                                                                
     region(tag) {
-        return this.presenting(new RegionPolicy({tag: tag}));
+        return this.presenting(new RegionOptions({tag: tag}));
     },
     /**
      * Presents the next view in a new layer. 
@@ -139,7 +139,7 @@ Handler.implement({
      * @for miruken.callback.CallbackHandler
      */                                                                
     pushLayer() {
-        return this.presenting(new RegionPolicy({push: true}));
+        return this.presenting(new RegionOptions({push: true}));
     },
     /**
      * Configures modal presentation options.
@@ -149,8 +149,8 @@ Handler.implement({
      * @for miruken.callback.CallbackHandler
      */
     modal(modal) {
-        return this.presenting(new RegionPolicy({
-            modal: new ModalPolicy(modal)
+        return this.presenting(new RegionOptions({
+            modal: new ModalOptions(modal)
         }));
     }
 });

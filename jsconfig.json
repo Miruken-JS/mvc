@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "experimentalDecorators": true
+  },
+  "exclude": [
+    "node_modules",
+    "subfolder/*/node_modules"
+  ]
+}

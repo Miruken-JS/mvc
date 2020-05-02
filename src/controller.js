@@ -1,8 +1,8 @@
 import {
     Base, Protocol, DisposingMixin
 } from "miruken-core";
+
 import { Handler } from "miruken-callback";
-import { Validator, Validating } from "miruken-validate";
 import { contextual } from "miruken-context";
 import { ViewRegion } from "./view";
 
@@ -27,11 +27,10 @@ export const Navigation = Base.extend({
  * @constructor
  * @extends Handler
  * @uses contextual
- * @uses Validating
  * @uses DisposingMixin
  */
 export const Controller = Handler.extend(
-    contextual, Validating, DisposingMixin, {
+    contextual, DisposingMixin, {
         
     get ifValid() {
         return this.io.$validAsync(this);
@@ -80,7 +79,7 @@ const TRAMPOLINE_IGNORE = [ "base", "constructor", "initialize", "dispose" ];
 
 function _createTrampoline(controller, source, style) {
     if (!(controller.prototype instanceof Controller)) {
-        throw new TypeError(format("%1 is not a Controller", controller));
+        throw new TypeError(`${controller} is not a Controller`);
     }        
     let trampoline = {},
         navigate   = Navigate(source),
@@ -164,6 +163,5 @@ function _validate(target, method, scope) {
     if (!context) {
         throw new Error("Validation requires a context to be available.");
     }
-    const validator = Validator(context);
-    return validator[method].call(validator, target || this, scope);
+    return context[method].call(context, target || this, scope);
 }

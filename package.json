@@ -22,11 +22,11 @@
       "dist": "dist/amd"
     },
     "dependencies": {
-      "miruken-callback": "0.0.5-alpha.24",
-      "miruken-context": "0.0.5-alpha.5",
-      "miruken-core": "0.0.5-alpha.3",
-      "miruken-error": "0.0.5-alpha.4",
-      "miruken-validate": "0.0.5-alpha.6"
+      "miruken-callback": "0.0.5-alpha.37",
+      "miruken-context": "0.0.5-alpha.16",
+      "miruken-core": "0.0.5-alpha.6",
+      "miruken-error": "0.0.5-alpha.6",
+      "miruken-validate": "0.0.5-alpha.10"
     },
     "devDependencies": {
       "chai": "^3.5.0"
@@ -71,5 +71,8 @@
     "validate.js": "^0.12.0",
     "vinyl-paths": "^2.1.0",
     "yargs": "^11.0.0"
+  },
+  "resolutions": {
+    "graceful-fs": "4.2.3"
   }
 }

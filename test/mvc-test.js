@@ -1,12 +1,11 @@
 import { Base, design } from "miruken-core";
 import { Context } from "miruken-context";
 import {
-    ValidationHandler, ValidateJsHandler,
-    required, number, valid
+    ValidateJsHandler, required, number, valid
 } from "miruken-validate";
 
 import { Controller } from "../src/controller";
-//import { ModalPolicy } from "../src/modal";
+//import { ModalOptions } from "../src/modal";
 import { expect } from "chai";
 
 const Person = Base.extend({
@@ -35,7 +34,7 @@ describe("Controller", () => {
     let context;
     beforeEach(() => {
         context   = new Context();
-        context.addHandlers(new ValidationHandler(), new ValidateJsHandler());
+        context.addHandlers(new ValidateJsHandler());
     });
 
     describe("#validate", () => {
