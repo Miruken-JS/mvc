@@ -1,4 +1,4 @@
-import { Protocol } from "miruken-core";
+import { Protocol } from "@miruken/core";
 
 /**
  * Protocol for managing master-detail relationships.

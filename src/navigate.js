@@ -1,17 +1,11 @@
 import {
-    Base, Protocol
-} from "miruken-core";
-
-import {
-    Handler, CompositeHandler
-} from "miruken-callback";
+    Base, Protocol, Handler, CompositeHandler,
+    Errors, contextual
+} from "@miruken/core";
 
 import {
     Validator, Validating
-} from "miruken-validate";
-
-import { contextual } from "miruken-context";
-import { Errors } from "miruken-error";
+} from "@miruken/validate";
 
 import {
     Navigation, Controller, ControllerNotFound
@@ -84,7 +78,7 @@ export const NavigateHandler = CompositeHandler.extend(Navigate, {
                         composer = composer.pushLayer();
                     }
                     let io = ctx === context ? composer
-                           : ctx.$self().next(composer);
+                           : ctx.$self().$chain(composer);
                     if ($isFunction(configureIO)) {
                         io = configureIO(io, ctrl) || io;
                     }

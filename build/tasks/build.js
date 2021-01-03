@@ -1,47 +1,49 @@
 var gulp             = require("gulp");
+var path             = require('path');
 var runSequence      = require("run-sequence");
 var paths            = require("../paths");
 var rollup           = require("rollup").rollup;
-var resolve          = require("rollup-plugin-node-resolve");
-var rollupMultiEntry = require("rollup-plugin-multi-entry");
-var rollupBabel      = require("rollup-plugin-babel");
+var alias            = require("@rollup/plugin-alias");
+var resolve          = require("@rollup/plugin-node-resolve").default;
+var rollupMultiEntry = require("@rollup/plugin-multi-entry");
+var rollupBabel      = require("@rollup/plugin-babel").default;
 var camelCase        = require("camelcase");
+var pkg              = require('../../package.json');
 
-var jsName = paths.packageName + '.js';
+var jsName           = paths.packageName + '.js';
+var root             = path.join(__dirname, '../..');
 
 gulp.task("rollup", function(done) {
     rollup({
         input:   paths.source,
-        external: [
-            "miruken-core",
-            "miruken-callback",
-            "miruken-context",
-            "miruken-validate",
-            "miruken-error",            
-        ],
+        external: Object.keys(pkg.jspm.dependencies),        
         plugins: [
             rollupMultiEntry(),
-            rollupBabel(),
-            resolve()
+            rollupBabel({ babelHelpers: 'bundled' }),
+            alias({
+                entries: [
+                    { find: '@', replacement: path.resolve(root, 'src') },
+                    { find: 'mvc', replacement: path.resolve(root, 'src') }
+                ]
+            }),
+            resolve()            
         ]
     })
     .then(function(bundle) {
         var moduleTypes = ["amd", "cjs", "es", "iife", "system", "umd"];
         moduleTypes.forEach(function(moduleType){
+            var name   = paths.packageName;
+            var output = paths.output + moduleType + '/' + jsName;
+            if (moduleType === "iife") {
+                name = name.replace('@', '').replace('/', '-');
+            }            
             bundle.write({
-                file:       paths.output + moduleType + '/' + jsName,
-                format:     moduleType,
-                name: camelCase(paths.packageName),
-                output: {
-                    globals: {
-                        "miruken-core": "mirukenCore",
-                        "miruken-callback": "mirukenCallback",
-                        "miruken-context": "mirukenContext",
-                        "miruken-validate": "mirukenValidate",
-                        "miruken-error": "mirukenError",                        
-                    }
-                }
+                file:   output,
+                format: moduleType,
+                name:   camelCase(name)
             });
+            gulp.src(['./package.json', './README.md'])
+                .pipe(gulp.dest(path.dirname(output)));
         }); 
         console.log('Build complete');
     })

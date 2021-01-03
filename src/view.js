@@ -1,8 +1,9 @@
 import {
-    Base, Protocol, Options, Disposing
-} from "miruken-core";
+    Base, Protocol, Options, Handler,
+    Disposing, handlesOptions, createKeyChain
+} from "@miruken/core";
 
-import { Handler } from "miruken-callback";
+const _ = createKeyChain();
 
 /**
  * Protocol for representing a layer in a 
@@ -48,7 +49,9 @@ export const ViewRegionAware = Protocol.extend({
  * @class PresentationOptions
  * @extends Options
  */
-export const PresentationOptions = Options.extend();
+@handlesOptions("presenting")
+export class PresentationOptions extends Options {
+}
 
 /**
  * Options for describing modal presentation.
@@ -86,19 +89,20 @@ export const RegionOptions = PresentationOptions.extend({
  */
 export const ButtonClicked = Base.extend({
     constructor(button, buttonIndex) {
-        this.extend({
-            /**
-             * Gets the clicked button.
-             * @property {Any} button
-             */                                
-            get button() { return button; },
-            /**
-             * Gets the clicked button index.
-             * @property {number} button index
-             */                                
-            get buttonIndex() { return buttonIndex; }
-        });
-    }
+        _(this).button      = button;
+        _(this).buttonIndex = buttonIndex;
+    },
+
+    /**
+     * Gets the clicked button.
+     * @property {Any} button
+     */                                
+    get button() { return _(this).button; },
+    /**
+     * Gets the clicked button index.
+     * @property {number} button index
+     */                                
+    get buttonIndex() { return _(this).buttonIndex; }
 });
 
 /**
@@ -118,8 +122,6 @@ export const ModalProviding = Protocol.extend({
      */
     showModal(container, content, options, context) {}
 });
-
-Handler.registerOptions(PresentationOptions, "presenting");
 
 Handler.implement({
     /**

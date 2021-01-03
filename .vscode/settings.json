@@ -1,0 +1,22 @@
+{
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/.tern-port": true,
+        "lib": true,
+        "dist": true,        
+        "node_modules": true,
+        "jspm_packages": true,        
+        "coverage": true,
+        "package-lock.json": true,
+        "yarn.lock": true        
+    }
+}

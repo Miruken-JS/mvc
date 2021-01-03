@@ -1,5 +1,5 @@
-import { Base, design } from "miruken-core";
-import { Context } from "miruken-context";
+import { Base, design, Context } from "@miruken/core";
+
 import {
     ValidateJsHandler, required, number, valid
 } from "miruken-validate";

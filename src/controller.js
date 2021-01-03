@@ -1,9 +1,8 @@
 import {
-    Base, Protocol, DisposingMixin
-} from "miruken-core";
+    Base, Protocol, DisposingMixin,
+    Handler, contextual
+} from "@miruken/core";
 
-import { Handler } from "miruken-callback";
-import { contextual } from "miruken-context";
 import { ViewRegion } from "./view";
 
 const globalPrepare = [],
@@ -140,7 +139,7 @@ function _bindIO(io, controller) {
         controller.io = io;
         return;
     }
-    const executor = controller.io = io.decorate({
+    const executor = controller.io = io.$decorate({
         toDelegate: function () {
             const ex = _assemble(this, globalExecute, controller);
             Reflect.deleteProperty(executor, "toDelegate");

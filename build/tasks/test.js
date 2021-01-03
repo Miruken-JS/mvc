@@ -31,10 +31,6 @@ gulp.task('cover', function (done) {
     preprocessors: {
       'test/**/*.js': ['babel'],
       'src/**/*.js': ['babel', 'coverage']
-    },
-    coverageReporter: {
-      type: 'html',
-      dir: 'build/reports/coverage'
     }
   }, done).start();
 });

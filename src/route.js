@@ -1,6 +1,6 @@
 import {
     Base, Protocol, StrictProtocol
-} from "miruken-core";
+} from "@miruken/core";
 
 import { ControllerNotFound } from "./controller";
 import { Navigate } from "./navigate";
