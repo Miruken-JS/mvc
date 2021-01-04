@@ -8,8 +8,8 @@ System.config({
 
   map: {
     "@jspm/core": "npm:@jspm/core@1.1.1",
-    "@miruken/core": "npm:@miruken/core@0.0.5-alpha.49",
-    "@miruken/validate": "npm:@miruken/validate@0.0.5-alpha.25",
+    "@miruken/core": "npm:@miruken/core@2.0.0",
+    "@miruken/validate": "npm:@miruken/validate@2.0.0",
     "chai": "npm:chai@4.2.0",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.5.0"
@@ -26,11 +26,11 @@ System.config({
     "github:jspm/nodelibs-vm@0.1.0": {
       "vm-browserify": "npm:vm-browserify@0.0.4"
     },
-    "npm:@miruken/core@0.0.5-alpha.49": {
+    "npm:@miruken/core@2.0.0": {
       "reflect-metadata": "npm:reflect-metadata@0.1.13"
     },
-    "npm:@miruken/validate@0.0.5-alpha.25": {
-      "@miruken/core": "npm:@miruken/core@0.0.5-alpha.49",
+    "npm:@miruken/validate@2.0.0": {
+      "@miruken/core": "npm:@miruken/core@2.0.0",
       "validate.js": "npm:validate.js@0.13.1"
     },
     "npm:assert@1.5.0": {
@@ -59,13 +59,6 @@ System.config({
     },
     "npm:inherits@2.0.1": {
       "util": "github:jspm/nodelibs-util@0.1.0"
-    },
-    "npm:miruken-core@0.0.5-alpha.44": {
-      "reflect-metadata": "npm:reflect-metadata@0.1.13"
-    },
-    "npm:miruken-validate@0.0.5-alpha.23": {
-      "miruken-core": "npm:miruken-core@0.0.5-alpha.44",
-      "validate.js": "npm:validate.js@0.13.1"
     },
     "npm:process@0.11.10": {
       "assert": "github:jspm/nodelibs-assert@0.1.0",
